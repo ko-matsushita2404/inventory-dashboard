@@ -32,30 +32,24 @@ conn.close()
 # CSSを埋め込み
 st.markdown("""
 <style>
-    .container-map {
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
+    /* 全体的なコンテナのスタイルはStreamlitのデフォルトレイアウトに任せる */
     .item-area-map {
         background-color: #fff;
         border-radius: 8px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         padding: 20px;
-        flex: 1;
-        min-width: 300px;
+        margin-bottom: 20px; /* 各マップ間のスペース */
     }
 
     /* 小エリアのスタイル */
     .small-inventory-map {
-        margin-bottom: 20px;
-        width: 600px;
+        width: 600px; /* 小エリア全体の幅 */
         margin-left: auto;
         margin-right: auto;
     }
     .small-area-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, 1fr); /* 2列を維持 */
         gap: 10px;
         background-color: #e9e9e9;
         padding: 10px;
@@ -65,7 +59,7 @@ st.markdown("""
     /* 大エリアのスタイル */
     .large-inventory-map {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr; /* 大北と大南を横並びにする */
         gap: 20px;
     }
     .large-inventory-map .top-right-grid,
@@ -93,7 +87,7 @@ st.markdown("""
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        min-height: 80px;
+        min-height: 80px; /* 内容が収まるように調整 */
         position: relative;
     }
 
@@ -111,85 +105,86 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# HTML構造をStreamlitに埋め込み
+# 小エリア在庫マップ
 st.markdown(f"""
-<div class="container-map">
-    <div class="item-area-map">
-        <h3>小エリア在庫マップ</h3>
-        <div class="small-inventory-map">
-            <div class="small-area-grid">
-                <div id="小左1段" class="grid-cell"><span class="zone-name">小左1段</span><span class="item-count">{location_counts.get('小左1段', 0)}</span></div>
-                <div id="小右1段" class="grid-cell"><span class="zone-name">小右1段</span><span class="item-count">{location_counts.get('小右1段', 0)}</span></div>
-                <div id="小左2段" class="grid-cell"><span class="zone-name">小左2段</span><span class="item-count">{location_counts.get('小左2段', 0)}</span></div>
-                <div id="小右2段" class="grid-cell"><span class="zone-name">小右2段</span><span class="item-count">{location_counts.get('小右2段', 0)}</span></div>
-                <div id="小左3段" class="grid-cell"><span class="zone-name">小左3段</span><span class="item-count">{location_counts.get('小左3段', 0)}</span></div>
-                <div id="小右3段" class="grid-cell"><span class="zone-name">小右3段</span><span class="item-count">{location_counts.get('小右3段', 0)}</span></div>
-            </div>
+<div class="item-area-map">
+    <h3>小エリア在庫マップ</h3>
+    <div class="small-inventory-map">
+        <div class="small-area-grid">
+            <div id="小左1段" class="grid-cell"><span class="zone-name">小左1段</span><span class="item-count">{location_counts.get('小左1段', 0)}</span></div>
+            <div id="小右1段" class="grid-cell"><span class="zone-name">小右1段</span><span class="item-count">{location_counts.get('小右1段', 0)}</span></div>
+            <div id="小左2段" class="grid-cell"><span class="zone-name">小左2段</span><span class="item-count">{location_counts.get('小左2段', 0)}</span></div>
+            <div id="小右2段" class="grid-cell"><span class="zone-name">小右2段</span><span class="item-count">{location_counts.get('小右2段', 0)}</span></div>
+            <div id="小左3段" class="grid-cell"><span class="zone-name">小左3段</span><span class="item-count">{location_counts.get('小左3段', 0)}</span></div>
+            <div id="小右3段" class="grid-cell"><span class="zone-name">小右3段</span><span class="item-count">{location_counts.get('小右3段', 0)}</span></div>
         </div>
     </div>
+</div>
+""", unsafe_allow_html=True)
 
-    <div class="item-area-map">
-        <h3>大エリア在庫マップ</h3>
-        <div class="large-inventory-map">
-            <div class="top-right-grid">
-                <div id="大北1-1" class="grid-cell"><span class="zone-name">大北1-1</span><span class="item-count">{location_counts.get('大北1-1', 0)}</span></div>
-                <div id="大北2-1" class="grid-cell"><span class="zone-name">大北2-1</span><span class="item-count">{location_counts.get('大北2-1', 0)}</span></div>
-                <div id="大北3-1" class="grid-cell"><span class="zone-name">大北3-1</span><span class="item-count">{location_counts.get('大北3-1', 0)}</span></div>
-                <div id="大北4-1" class="grid-cell"><span class="zone-name">大北4-1</span><span class="item-count">{location_counts.get('大北4-1', 0)}</span></div>
-                <div id="大北5-1" class="grid-cell"><span class="zone-name">大北5-1</span><span class="item-count">{location_counts.get('大北5-1', 0)}</span></div>
-                <div id="大北6-1" class="grid-cell"><span class="zone-name">大北6-1</span><span class="item-count">{location_counts.get('大北6-1', 0)}</span></div>
-                <div id="大北7-1" class="grid-cell"><span class="zone-name">大北7-1</span><span class="item-count">{location_counts.get('大北7-1', 0)}</span></div>
-                <div id="大北8-1" class="grid-cell"><span class="zone-name">大北8-1</span><span class="item-count">{location_counts.get('大北8-1', 0)}</span></div>
-                <div id="大北9-1" class="grid-cell"><span class="zone-name">大北9-1</span><span class="item-count">{location_counts.get('大北9-1', 0)}</span></div>
+# 大エリア在庫マップ
+st.markdown(f"""
+<div class="item-area-map">
+    <h3>大エリア在庫マップ</h3>
+    <div class="large-inventory-map">
+        <div class="top-right-grid">
+            <div id="大北1-1" class="grid-cell"><span class="zone-name">大北1-1</span><span class="item-count">{location_counts.get('大北1-1', 0)}</span></div>
+            <div id="大北2-1" class="grid-cell"><span class="zone-name">大北2-1</span><span class="item-count">{location_counts.get('大北2-1', 0)}</span></div>
+            <div id="大北3-1" class="grid-cell"><span class="zone-name">大北3-1</span><span class="item-count">{location_counts.get('大北3-1', 0)}</span></div>
+            <div id="大北4-1" class="grid-cell"><span class="zone-name">大北4-1</span><span class="item-count">{location_counts.get('大北4-1', 0)}</span></div>
+            <div id="大北5-1" class="grid-cell"><span class="zone-name">大北5-1</span><span class="item-count">{location_counts.get('大北5-1', 0)}</span></div>
+            <div id="大北6-1" class="grid-cell"><span class="zone-name">大北6-1</span><span class="item-count">{location_counts.get('大北6-1', 0)}</span></div>
+            <div id="大北7-1" class="grid-cell"><span class="zone-name">大北7-1</span><span class="item-count">{location_counts.get('大北7-1', 0)}</span></div>
+            <div id="大北8-1" class="grid-cell"><span class="zone-name">大北8-1</span><span class="item-count">{location_counts.get('大北8-1', 0)}</span></div>
+            <div id="大北9-1" class="grid-cell"><span class="zone-name">大北9-1</span><span class="item-count">{location_counts.get('大北9-1', 0)}</span></div>
 
-                <div id="大北1-2" class="grid-cell"><span class="zone-name">大北1-2</span><span class="item-count">{location_counts.get('大北1-2', 0)}</span></div>
-                <div id="大北2-2" class="grid-cell"><span class="zone-name">大北2-2</span><span class="item-count">{location_counts.get('大北2-2', 0)}</span></div>
-                <div id="大北3-2" class="grid-cell"><span class="zone-name">大北3-2</span><span class="item-count">{location_counts.get('大北3-2', 0)}</span></div>
-                <div id="大北4-2" class="grid-cell"><span class="zone-name">大北4-2</span><span class="item-count">{location_counts.get('大北4-2', 0)}</span></div>
-                <div id="大北5-2" class="grid-cell"><span class="zone-name">大北5-2</span><span class="item-count">{location_counts.get('大北5-2', 0)}</span></div>
-                <div id="大北6-2" class="grid-cell"><span class="zone-name">大北6-2</span><span class="item-count">{location_counts.get('大北6-2', 0)}</span></div>
-                <div id="大北7-2" class="grid-cell"><span class="zone-name">大北7-2</span><span class="item-count">{location_counts.get('大北7-2', 0)}</span></div>
-                <div id="大北8-2" class="grid-cell"><span class="zone-name">大北8-2</span><span class="item-count">{location_counts.get('大北8-2', 0)}</span></div>
-                <div id="大北9-2" class="grid-cell"><span class="zone-name">大北9-2</span><span class="item-count">{location_counts.get('大北9-2', 0)}</span></div>
+            <div id="大北1-2" class="grid-cell"><span class="zone-name">大北1-2</span><span class="item-count">{location_counts.get('大北1-2', 0)}</span></div>
+            <div id="大北2-2" class="grid-cell"><span class="zone-name">大北2-2</span><span class="item-count">{location_counts.get('大北2-2', 0)}</span></div>
+            <div id="大北3-2" class="grid-cell"><span class="zone-name">大北3-2</span><span class="item-count">{location_counts.get('大北3-2', 0)}</span></div>
+            <div id="大北4-2" class="grid-cell"><span class="zone-name">大北4-2</span><span class="item-count">{location_counts.get('大北4-2', 0)}</span></div>
+            <div id="大北5-2" class="grid-cell"><span class="zone-name">大北5-2</span><span class="item-count">{location_counts.get('大北5-2', 0)}</span></div>
+            <div id="大北6-2" class="grid-cell"><span class="zone-name">大北6-2</span><span class="item-count">{location_counts.get('大北6-2', 0)}</span></div>
+            <div id="大北7-2" class="grid-cell"><span class="zone-name">大北7-2</span><span class="item-count">{location_counts.get('大北7-2', 0)}</span></div>
+            <div id="大北8-2" class="grid-cell"><span class="zone-name">大北8-2</span><span class="item-count">{location_counts.get('大北8-2', 0)}</span></div>
+            <div id="大北9-2" class="grid-cell"><span class="zone-name">大北9-2</span><span class="item-count">{location_counts.get('大北9-2', 0)}</span></div>
 
-                <div id="大北1-3" class="grid-cell"><span class="zone-name">大北1-3</span><span class="item-count">{location_counts.get('大北1-3', 0)}</span></div>
-                <div id="大北2-3" class="grid-cell"><span class="zone-name">大北2-3</span><span class="item-count">{location_counts.get('大北2-3', 0)}</span></div>
-                <div id="大北3-3" class="grid-cell"><span class="zone-name">大北3-3</span><span class="item-count">{location_counts.get('大北3-3', 0)}</span></div>
-                <div id="大北4-3" class="grid-cell"><span class="zone-name">大北4-3</span><span class="item-count">{location_counts.get('大北4-3', 0)}</span></div>
-                <div id="大北5-3" class="grid-cell"><span class="zone-name">大北5-3</span><span class="item-count">{location_counts.get('大北5-3', 0)}</span></div>
-                <div id="大北6-3" class="grid-cell"><span class="zone-name">大北6-3</span><span class="item-count">{location_counts.get('大北6-3', 0)}</span></div>
-                <div id="大北7-3" class="grid-cell"><span class="zone-name">大北7-3</span><span class="item-count">{location_counts.get('大北7-3', 0)}</span></div>
-                <div id="大北8-3" class="grid-cell"><span class="zone-name">大北8-3</span><span class="item-count">{location_counts.get('大北8-3', 0)}</span></div>
-                <div id="大北9-3" class="grid-cell"><span class="zone-name">大北9-3</span><span class="item-count">{location_counts.get('大北9-3', 0)}</span></div>
-            </div>
-            <div class="bottom-right-grid">
-                <div id="大南1-1" class="grid-cell"><span class="zone-name">大南1-1</span><span class="item-count">{location_counts.get('大南1-1', 0)}</span></div>
-                <div id="大南2-1" class="grid-cell"><span class="zone-name">大南2-1</span><span class="item-count">{location_counts.get('大南2-1', 0)}</span></div>
-                <div id="大南3-1" class="grid-cell"><span class="zone-name">大南3-1</span><span class="item-count">{location_counts.get('大南3-1', 0)}</span></div>
-                <div id="大南4-1" class="grid-cell"><span class="zone-name">大南4-1</span><span class="item-count">{location_counts.get('大南4-1', 0)}</span></div>
-                <div id="大南5-1" class="grid-cell"><span class="zone-name">大南5-1</span><span class="item-count">{location_counts.get('大南5-1', 0)}</span></div>
-                <div id="大南6-1" class="grid-cell"><span class="zone-name">大南6-1</span><span class="item-count">{location_counts.get('大南6-1', 0)}</span></div>
-                <div id="大南7-1" class="grid-cell"><span class="zone-name">大南7-1</span><span class="item-count">{location_counts.get('大南7-1', 0)}</span></div>
-                <div id="大南8-1" class="grid-cell"><span class="zone-name">大南8-1</span><span class="item-count">{location_counts.get('大南8-1', 0)}</span></div>
+            <div id="大北1-3" class="grid-cell"><span class="zone-name">大北1-3</span><span class="item-count">{location_counts.get('大北1-3', 0)}</span></div>
+            <div id="大北2-3" class="grid-cell"><span class="zone-name">大北2-3</span><span class="item-count">{location_counts.get('大北2-3', 0)}</span></div>
+            <div id="大北3-3" class="grid-cell"><span class="zone-name">大北3-3</span><span class="item-count">{location_counts.get('大北3-3', 0)}</span></div>
+            <div id="大北4-3" class="grid-cell"><span class="zone-name">大北4-3</span><span class="item-count">{location_counts.get('大北4-3', 0)}</span></div>
+            <div id="大北5-3" class="grid-cell"><span class="zone-name">大北5-3</span><span class="item-count">{location_counts.get('大北5-3', 0)}</span></div>
+            <div id="大北6-3" class="grid-cell"><span class="zone-name">大北6-3</span><span class="item-count">{location_counts.get('大北6-3', 0)}</span></div>
+            <div id="大北7-3" class="grid-cell"><span class="zone-name">大北7-3</span><span class="item-count">{location_counts.get('大北7-3', 0)}</span></div>
+            <div id="大北8-3" class="grid-cell"><span class="zone-name">大北8-3</span><span class="item-count">{location_counts.get('大北8-3', 0)}</span></div>
+            <div id="大北9-3" class="grid-cell"><span class="zone-name">大北9-3</span><span class="item-count">{location_counts.get('大北9-3', 0)}</span></div>
+        </div>
+        <div class="bottom-right-grid">
+            <div id="大南1-1" class="grid-cell"><span class="zone-name">大南1-1</span><span class="item-count">{location_counts.get('大南1-1', 0)}</span></div>
+            <div id="大南2-1" class="grid-cell"><span class="zone-name">大南2-1</span><span class="item-count">{location_counts.get('大南2-1', 0)}</span></div>
+            <div id="大南3-1" class="grid-cell"><span class="zone-name">大南3-1</span><span class="item-count">{location_counts.get('大南3-1', 0)}</span></div>
+            <div id="大南4-1" class="grid-cell"><span class="zone-name">大南4-1</span><span class="item-count">{location_counts.get('大南4-1', 0)}</span></div>
+            <div id="大南5-1" class="grid-cell"><span class="zone-name">大南5-1</span><span class="item-count">{location_counts.get('大南5-1', 0)}</span></div>
+            <div id="大南6-1" class="grid-cell"><span class="zone-name">大南6-1</span><span class="item-count">{location_counts.get('大南6-1', 0)}</span></div>
+            <div id="大南7-1" class="grid-cell"><span class="zone-name">大南7-1</span><span class="item-count">{location_counts.get('大南7-1', 0)}</span></div>
+            <div id="大南8-1" class="grid-cell"><span class="zone-name">大南8-1</span><span class="item-count">{location_counts.get('大南8-1', 0)}</span></div>
 
-                <div id="大南1-2" class="grid-cell"><span class="zone-name">大南1-2</span><span class="item-count">{location_counts.get('大南1-2', 0)}</span></div>
-                <div id="大南2-2" class="grid-cell"><span class="zone-name">大南2-2</span><span class="item-count">{location_counts.get('大南2-2', 0)}</span></div>
-                <div id="大南3-2" class="grid-cell"><span class="zone-name">大南3-2</span><span class="item-count">{location_counts.get('大南3-2', 0)}</span></div>
-                <div id="大南4-2" class="grid-cell"><span class="zone-name">大南4-2</span><span class="item-count">{location_counts.get('大南4-2', 0)}</span></div>
-                <div id="大南5-2" class="grid-cell"><span class="zone-name">大南5-2</span><span class="item-count">{location_counts.get('大南5-2', 0)}</span></div>
-                <div id="大南6-2" class="grid-cell"><span class="zone-name">大南6-2</span><span class="item-count">{location_counts.get('大南6-2', 0)}</span></div>
-                <div id="大南7-2" class="grid-cell"><span class="zone-name">大南7-2</span><span class="item-count">{location_counts.get('大南7-2', 0)}</span></div>
-                <div id="大南8-2" class="grid-cell"><span class="zone-name">大南8-2</span><span class="item-count">{location_counts.get('大南8-2', 0)}</span></div>
+            <div id="大南1-2" class="grid-cell"><span class="zone-name">大南1-2</span><span class="item-count">{location_counts.get('大南1-2', 0)}</span></div>
+            <div id="大南2-2" class="grid-cell"><span class="zone-name">大南2-2</span><span class="item-count">{location_counts.get('大南2-2', 0)}</span></div>
+            <div id="大南3-2" class="grid-cell"><span class="zone-name">大南3-2</span><span class="item-count">{location_counts.get('大南3-2', 0)}</span></div>
+            <div id="大南4-2" class="grid-cell"><span class="zone-name">大南4-2</span><span class="item-count">{location_counts.get('大南4-2', 0)}</span></div>
+            <div id="大南5-2" class="grid-cell"><span class="zone-name">大南5-2</span><span class="item-count">{location_counts.get('大南5-2', 0)}</span></div>
+            <div id="大南6-2" class="grid-cell"><span class="zone-name">大南6-2</span><span class="item-count">{location_counts.get('大南6-2', 0)}</span></div>
+            <div id="大南7-2" class="grid-cell"><span class="zone-name">大南7-2</span><span class="item-count">{location_counts.get('大南7-2', 0)}</span></div>
+            <div id="大南8-2" class="grid-cell"><span class="zone-name">大南8-2</span><span class="item-count">{location_counts.get('大南8-2', 0)}</span></div>
 
-                <div id="大南1-3" class="grid-cell"><span class="zone-name">大南1-3</span><span class="item-count">{location_counts.get('大南1-3', 0)}</span></div>
-                <div id="大南2-3" class="grid-cell"><span class="zone-name">大南2-3</span><span class="item-count">{location_counts.get('大南2-3', 0)}</span></div>
-                <div id="大南3-3" class="grid-cell"><span class="zone-name">大南3-3</span><span class="item-count">{location_counts.get('大南3-3', 0)}</span></div>
-                <div id="大南4-3" class="grid-cell"><span class="zone-name">大南4-3</span><span class="item-count">{location_counts.get('大南4-3', 0)}</span></div>
-                <div id="大南5-3" class="grid-cell"><span class="zone-name">大南5-3</span><span class="item-count">{location_counts.get('大南5-3', 0)}</span></div>
-                <div id="大南6-3" class="grid-cell"><span class="zone-name">大南6-3</span><span class="item-count">{location_counts.get('大南6-3', 0)}</span></div>
-                <div id="大南7-3" class="grid-cell"><span class="zone-name">大南7-3</span><span class="item-count">{location_counts.get('大南7-3', 0)}</span></div>
-                <div id="大南8-3" class="grid-cell"><span class="zone-name">大南8-3</span><span class="item-count">{location_counts.get('大南8-3', 0)}</span></div>
-            </div>
+            <div id="大南1-3" class="grid-cell"><span class="zone-name">大南1-3</span><span class="item-count">{location_counts.get('大南1-3', 0)}</span></div>
+            <div id="大南2-3" class="grid-cell"><span class="zone-name">大南2-3</span><span class="item-count">{location_counts.get('大南2-3', 0)}</span></div>
+            <div id="大南3-3" class="grid-cell"><span class="zone-name">大南3-3</span><span class="item-count">{location_counts.get('大南3-3', 0)}</span></div>
+            <div id="大南4-3" class="grid-cell"><span class="zone-name">大南4-3</span><span class="item-count">{location_counts.get('大南4-3', 0)}</span></div>
+            <div id="大南5-3" class="grid-cell"><span class="zone-name">大南5-3</span><span class="item-count">{location_counts.get('大南5-3', 0)}</span></div>
+            <div id="大南6-3" class="grid-cell"><span class="zone-name">大南6-3</span><span class="item-count">{location_counts.get('大南6-3', 0)}</span></div>
+            <div id="大南7-3" class="grid-cell"><span class="zone-name">大南7-3</span><span class="item-count">{location_counts.get('大南7-3', 0)}</span></div>
+            <div id="大南8-3" class="grid-cell"><span class="zone-name">大南8-3</span><span class="item-count">{location_counts.get('大南8-3', 0)}</span></div>
         </div>
     </div>
 </div>

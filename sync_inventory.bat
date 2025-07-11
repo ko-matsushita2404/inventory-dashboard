@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 > nul
 set /p commit_message="コミットメッセージを入力してください (例: 在庫データを更新): "
 
 cd /d "%~dp0"
