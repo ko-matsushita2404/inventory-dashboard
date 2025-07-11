@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>持ち出し履歴</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        a { display: block; margin-top: 20px; color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>持ち出し履歴</h1>
+    {% if items %}
+    <table>
+        <thead>
+            <tr>
+                <th>製番</th>
+                <th>説明</th>
+                <th>場所</th>
+                <th>持ち出し先</th>
+                <th>持ち出し日時</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td><a href="{{ url_for('item_detail', item_id=item.id) }}">{{ item.product_number }}</a></td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.location }}</td>
+                <td>{{ item.moved_out_to }}</td>
+                <td>{{ item.moved_out_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>持ち出し履歴はありません。</p>
+    {% endif %}
+    <form action="{{ url_for('clear_moved_out_history') }}" method="post" style="margin-top: 20px;">
+        <button type="submit" style="padding: 10px 15px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">履歴をクリア</button>
+    </form>
+    <a href="{{ url_for('index') }}">ホームに戻る</a>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アイテム持ち出し</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        p { margin-bottom: 10px; }
+        form { margin-top: 20px; }
+        label { display: block; margin-bottom: 5px; }
+        input[type="text"] { width: 300px; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        input[type="submit"] {
+            padding: 10px 15px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover { background-color: #c82333; }
+        a { display: block; margin-top: 20px; color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>アイテム持ち出し: {{ item.product_number }}</h1>
+    <p>説明: {{ item.description }}</p>
+    <p>場所: {{ item.location }}</p>
+
+    <form method="POST">
+        <label for="moved_out_to">持ち出し先:</label>
+        <input type="text" id="moved_out_to" name="moved_out_to" required>
+        <input type="submit" value="持ち出しを確定">
+    </form>
+    <a href="{{ url_for('index') }}">キャンセルしてホームに戻る</a>
+</body>
+</html>

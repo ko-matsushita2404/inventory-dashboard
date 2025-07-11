@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アイテム詳細</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        p { margin-bottom: 10px; }
+        strong { display: inline-block; width: 100px; }
+        a { display: block; margin-top: 20px; color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>アイテム詳細</h1>
+    {% if item %}
+    <p><strong>製番:</strong> {{ item.product_number }}</p>
+    <p><strong>説明:</strong> {{ item.description }}</p>
+    <p><strong>場所:</strong> {{ item.location }}</p>
+    <p><strong>ステータス:</strong> {{ item.status }}</p>
+    {% if item.status == 'moved_out' %}
+    <p><strong>持ち出し先:</strong> {{ item.moved_out_to }}</p>
+    <p><strong>持ち出し日時:</strong> {{ item.moved_out_at }}</p>
+    {% endif %}
+    {% else %}
+    <p>アイテムが見つかりませんでした。</p>
+    {% endif %}
+    <a href="{{ url_for('index') }}">ホームに戻る</a>
+</body>
+</html>
