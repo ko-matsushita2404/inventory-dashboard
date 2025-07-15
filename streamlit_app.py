@@ -1,48 +1,92 @@
 import streamlit as st
+st.write("## これはGeminiによる修正版です - 表示確認用")
 import sqlite3
 import pandas as pd
+import re
 
 DATABASE = 'inventory.db'
 
 def get_db_connection():
+    """データベース接続を取得します。"""
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
+# --- Streamlit ページ設定 ---
 st.set_page_config(layout="wide", page_title="在庫状況ダッシュボード")
-
 st.title("在庫状況ダッシュボード")
 
-# --- 在庫マップの表示 --- #
-st.header("在庫マップ")
+# --- データ取得 ---
+try:
+    conn = get_db_connection()
+    in_warehouse_items = conn.execute("SELECT location FROM items WHERE status = 'in_warehouse'").fetchall()
+    all_items_for_df = conn.execute("SELECT * FROM items").fetchall()
+    conn.close()
+except Exception as e:
+    st.error(f"データベースエラーが発生しました: {e}")
+    st.stop()
 
-conn = get_db_connection()
-in_warehouse_items = conn.execute("SELECT * FROM items WHERE status = 'in_warehouse'").fetchall()
-
-# 場所ごとの在庫数を集計
+# --- 在庫数の集計 ---
 location_counts = {}
+# HTMLから場所名を抽出するための正規表現 (例: 大北1-1, 小左1段)
+# id="大北1-1" または zone-name>大北1-1</span> のようなパターンにマッチ
+pattern = re.compile(r'id="([^"]+)"|zone-name">([^<]+)<')
+
 for item in in_warehouse_items:
-    location = item['location']
-    if location not in location_counts:
-        location_counts[location] = 0
-    location_counts[location] += 1
+    if not item['location'] or not isinstance(item['location'], str):
+        continue
+    
+    matches = pattern.findall(item['location'])
+    for match in matches:
+        location = next((loc for loc in match if loc), None)
+        if location:
+            location_counts[location] = location_counts.get(location, 0) + 1
 
-conn.close()
-
-# CSSを埋め込み
-st.markdown("""
+# --- CSSスタイル --- (static/css/styles.css と index.html のスタイルを統合)
+css_style = """
 <style>
-    /* 全体的なコンテナのスタイルはStreamlitのデフォルトレイアウトに任せる */
-    .item-area-map {
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        color: #333;
+    }
+    h1, h2 { color: #333; }
+    .button-group { margin-top: 20px; margin-bottom: 20px; }
+    .button-group a, .button-group button {
+        display: inline-block;
+        padding: 10px 15px;
+        margin-right: 10px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+    }
+    .button-group a:hover, .button-group button:hover { background-color: #0056b3; }
+    .moved-out-button { background-color: #dc3545; }
+    .moved-out-button:hover { background-color: #c82333; }
+
+    .container {
+        display: flex;
+        padding: 20px;
+        gap: 20px;
+    }
+    .item-area {
         background-color: #fff;
         border-radius: 8px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         padding: 20px;
-        margin-bottom: 20px; /* 各マップ間のスペース */
+    }
+    #shelf-area {
+        flex: 3;
     }
 
     /* 小エリアのスタイル */
     .small-inventory-map {
+        margin-bottom: 30px;
         width: 600px; /* 小エリア全体の幅 */
         margin-left: auto;
         margin-right: auto;
@@ -87,125 +131,131 @@ st.markdown("""
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        min-height: 80px; /* 内容が収まるように調整 */
+        min-height: 60px; /* Adjust as needed */
         position: relative;
     }
-
     .zone-name {
         font-weight: bold;
         color: #555;
         margin-bottom: 5px;
     }
-
     .item-count {
         font-size: 1.5em;
         font-weight: bold;
         color: #007bff;
     }
+
+    /* 詳細在庫リストのスタイル */
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
 </style>
-""", unsafe_allow_html=True)
+"""
 
-# 小エリア在庫マップ
-st.markdown(f"""
-<div class="item-area-map">
-    <h3>小エリア在庫マップ</h3>
-    <div class="small-inventory-map">
-        <div class="small-area-grid">
-            <div id="小左1段" class="grid-cell"><span class="zone-name">小左1段</span><span class="item-count">{location_counts.get('小左1段', 0)}</span></div>
-            <div id="小右1段" class="grid-cell"><span class="zone-name">小右1段</span><span class="item-count">{location_counts.get('小右1段', 0)}</span></div>
-            <div id="小左2段" class="grid-cell"><span class="zone-name">小左2段</span><span class="item-count">{location_counts.get('小左2段', 0)}</span></div>
-            <div id="小右2段" class="grid-cell"><span class="zone-name">小右2段</span><span class="item-count">{location_counts.get('小右2段', 0)}</span></div>
-            <div id="小左3段" class="grid-cell"><span class="zone-name">小左3段</span><span class="item-count">{location_counts.get('小左3段', 0)}</span></div>
-            <div id="小右3段" class="grid-cell"><span class="zone-name">小右3段</span><span class="item-count">{location_counts.get('小右3段', 0)}</span></div>
+# --- HTMLコンテンツの生成 --- (index.html の構造を再現)
+html_content = f"""
+<div class="container">
+    <div id="shelf-area" class="item-area">
+        <h2>小エリア在庫マップ</h2>
+        <div class="small-inventory-map">
+            <div class="small-area-grid">
+"""
+# 小エリアのグリッドセルを動的に生成
+small_area_locations = [
+    "小左1段", "小右1段",
+    "小左2段", "小右2段",
+    "小左3段", "小右3段"
+]
+for loc_name in small_area_locations:
+    count = location_counts.get(loc_name, 0)
+    html_content += f"""
+                <div id="{loc_name}" class="grid-cell">
+                    <span class="zone-name">{loc_name}</span>
+                    <span class="item-count">{count}</span>
+                </div>
+"""
+html_content += f"""
+            </div>
+        </div>
+
+        <h2>大エリア在庫マップ</h2>
+        <div class="large-inventory-map">
+            <div class="top-right-grid">
+"""
+# 大北エリアのグリッドセルを動的に生成
+for i in range(1, 4):
+    for j in range(1, 10):
+        loc_name = f"大北{j}-{i}"
+        count = location_counts.get(loc_name, 0)
+        html_content += f"""
+                <div id="{loc_name}" class="grid-cell">
+                    <span class="zone-name">{loc_name}</span>
+                    <span class="item-count">{count}</span>
+                </div>
+"""
+html_content += f"""
+            </div>
+            <div class="bottom-right-grid">
+"""
+# 大南エリアのグリッドセルを動的に生成
+for i in range(1, 4):
+    for j in range(1, 9):
+        loc_name = f"大南{j}-{i}"
+        count = location_counts.get(loc_name, 0)
+        html_content += f"""
+                <div id="{loc_name}" class="grid-cell">
+                    <span class="zone-name">{loc_name}</span>
+                    <span class="item-count">{count}</span>
+                </div>
+"""
+html_content += f"""
+            </div>
         </div>
     </div>
 </div>
-""", unsafe_allow_html=True)
+"""
 
-# 大エリア在庫マップ
-st.markdown(f"""
-<div class="item-area-map">
-    <h3>大エリア在庫マップ</h3>
-    <div class="large-inventory-map">
-        <div class="top-right-grid">
-            <div id="大北1-1" class="grid-cell"><span class="zone-name">大北1-1</span><span class="item-count">{location_counts.get('大北1-1', 0)}</span></div>
-            <div id="大北2-1" class="grid-cell"><span class="zone-name">大北2-1</span><span class="item-count">{location_counts.get('大北2-1', 0)}</span></div>
-            <div id="大北3-1" class="grid-cell"><span class="zone-name">大北3-1</span><span class="item-count">{location_counts.get('大北3-1', 0)}</span></div>
-            <div id="大北4-1" class="grid-cell"><span class="zone-name">大北4-1</span><span class="item-count">{location_counts.get('大北4-1', 0)}</span></div>
-            <div id="大北5-1" class="grid-cell"><span class="zone-name">大北5-1</span><span class="item-count">{location_counts.get('大北5-1', 0)}</span></div>
-            <div id="大北6-1" class="grid-cell"><span class="zone-name">大北6-1</span><span class="item-count">{location_counts.get('大北6-1', 0)}</span></div>
-            <div id="大北7-1" class="grid-cell"><span class="zone-name">大北7-1</span><span class="item-count">{location_counts.get('大北7-1', 0)}</span></div>
-            <div id="大北8-1" class="grid-cell"><span class="zone-name">大北8-1</span><span class="item-count">{location_counts.get('大北8-1', 0)}</span></div>
-            <div id="大北9-1" class="grid-cell"><span class="zone-name">大北9-1</span><span class="item-count">{location_counts.get('大北9-1', 0)}</span></div>
+# --- Streamlitでの表示 ---
+st.markdown(css_style, unsafe_allow_html=True)
+st.markdown(html_content, unsafe_allow_html=True)
 
-            <div id="大北1-2" class="grid-cell"><span class="zone-name">大北1-2</span><span class="item-count">{location_counts.get('大北1-2', 0)}</span></div>
-            <div id="大北2-2" class="grid-cell"><span class="zone-name">大北2-2</span><span class="item-count">{location_counts.get('大北2-2', 0)}</span></div>
-            <div id="大北3-2" class="grid-cell"><span class="zone-name">大北3-2</span><span class="item-count">{location_counts.get('大北3-2', 0)}</span></div>
-            <div id="大北4-2" class="grid-cell"><span class="zone-name">大北4-2</span><span class="item-count">{location_counts.get('大北4-2', 0)}</span></div>
-            <div id="大北5-2" class="grid-cell"><span class="zone-name">大北5-2</span><span class="item-count">{location_counts.get('大北5-2', 0)}</span></div>
-            <div id="大北6-2" class="grid-cell"><span class="zone-name">大北6-2</span><span class="item-count">{location_counts.get('大北6-2', 0)}</span></div>
-            <div id="大北7-2" class="grid-cell"><span class="zone-name">大北7-2</span><span class="item-count">{location_counts.get('大北7-2', 0)}</span></div>
-            <div id="大北8-2" class="grid-cell"><span class="zone-name">大北8-2</span><span class="item-count">{location_counts.get('大北8-2', 0)}</span></div>
-            <div id="大北9-2" class="grid-cell"><span class="zone-name">大北9-2</span><span class="item-count">{location_counts.get('大北9-2', 0)}</span></div>
+# --- 詳細在庫リストと持ち出し履歴 (StreamlitのDataFrameを使用) ---
+st.header("詳細在庫リスト")
 
-            <div id="大北1-3" class="grid-cell"><span class="zone-name">大北1-3</span><span class="item-count">{location_counts.get('大北1-3', 0)}</span></div>
-            <div id="大北2-3" class="grid-cell"><span class="zone-name">大北2-3</span><span class="item-count">{location_counts.get('大北2-3', 0)}</span></div>
-            <div id="大北3-3" class="grid-cell"><span class="zone-name">大北3-3</span><span class="item-count">{location_counts.get('大北3-3', 0)}</span></div>
-            <div id="大北4-3" class="grid-cell"><span class="zone-name">大北4-3</span><span class="item-count">{location_counts.get('大北4-3', 0)}</span></div>
-            <div id="大北5-3" class="grid-cell"><span class="zone-name">大北5-3</span><span class="item-count">{location_counts.get('大北5-3', 0)}</span></div>
-            <div id="大北6-3" class="grid-cell"><span class="zone-name">大北6-3</span><span class="item-count">{location_counts.get('大北6-3', 0)}</span></div>
-            <div id="大北7-3" class="grid-cell"><span class="zone-name">大北7-3</span><span class="item-count">{location_counts.get('大北7-3', 0)}</span></div>
-            <div id="大北8-3" class="grid-cell"><span class="zone-name">大北8-3</span><span class="item-count">{location_counts.get('大北8-3', 0)}</span></div>
-            <div id="大北9-3" class="grid-cell"><span class="zone-name">大北9-3</span><span class="item-count">{location_counts.get('大北9-3', 0)}</span></div>
-        </div>
-        <div class="bottom-right-grid">
-            <div id="大南1-1" class="grid-cell"><span class="zone-name">大南1-1</span><span class="item-count">{location_counts.get('大南1-1', 0)}</span></div>
-            <div id="大南2-1" class="grid-cell"><span class="zone-name">大南2-1</span><span class="item-count">{location_counts.get('大南2-1', 0)}</span></div>
-            <div id="大南3-1" class="grid-cell"><span class="zone-name">大南3-1</span><span class="item-count">{location_counts.get('大南3-1', 0)}</span></div>
-            <div id="大南4-1" class="grid-cell"><span class="zone-name">大南4-1</span><span class="item-count">{location_counts.get('大南4-1', 0)}</span></div>
-            <div id="大南5-1" class="grid-cell"><span class="zone-name">大南5-1</span><span class="item-count">{location_counts.get('大南5-1', 0)}</span></div>
-            <div id="大南6-1" class="grid-cell"><span class="zone-name">大南6-1</span><span class="item-count">{location_counts.get('大南6-1', 0)}</span></div>
-            <div id="大南7-1" class="grid-cell"><span class="zone-name">大南7-1</span><span class="item-count">{location_counts.get('大南7-1', 0)}</span></div>
-            <div id="大南8-1" class="grid-cell"><span class="zone-name">大南8-1</span><span class="item-count">{location_counts.get('大南8-1', 0)}</span></div>
+if all_items_for_df:
+    df_all_items = pd.DataFrame(all_items_for_df, columns=all_items_for_df[0].keys())
+    
+    # locationカラムのHTMLをクリーンアップして表示
+    def clean_location_for_display(location_html):
+        if not isinstance(location_html, str):
+            return ""
+        matches = pattern.findall(location_html)
+        cleaned_locations = []
+        for match in matches:
+            location = next((loc for loc in match if loc), None)
+            if location:
+                cleaned_locations.append(location)
+        return ", ".join(sorted(list(set(cleaned_locations))))
 
-            <div id="大南1-2" class="grid-cell"><span class="zone-name">大南1-2</span><span class="item-count">{location_counts.get('大南1-2', 0)}</span></div>
-            <div id="大南2-2" class="grid-cell"><span class="zone-name">大南2-2</span><span class="item-count">{location_counts.get('大南2-2', 0)}</span></div>
-            <div id="大南3-2" class="grid-cell"><span class="zone-name">大南3-2</span><span class="item-count">{location_counts.get('大南3-2', 0)}</span></div>
-            <div id="大南4-2" class="grid-cell"><span class="zone-name">大南4-2</span><span class="item-count">{location_counts.get('大南4-2', 0)}</span></div>
-            <div id="大南5-2" class="grid-cell"><span class="zone-name">大南5-2</span><span class="item-count">{location_counts.get('大南5-2', 0)}</span></div>
-            <div id="大南6-2" class="grid-cell"><span class="zone-name">大南6-2</span><span class="item-count">{location_counts.get('大南6-2', 0)}</span></div>
-            <div id="大南7-2" class="grid-cell"><span class="zone-name">大南7-2</span><span class="item-count">{location_counts.get('大南7-2', 0)}</span></div>
-            <div id="大南8-2" class="grid-cell"><span class="zone-name">大南8-2</span><span class="item-count">{location_counts.get('大南8-2', 0)}</span></div>
+    df_all_items['location'] = df_all_items['location'].apply(clean_location_for_display)
 
-            <div id="大南1-3" class="grid-cell"><span class="zone-name">大南1-3</span><span class="item-count">{location_counts.get('大南1-3', 0)}</span></div>
-            <div id="大南2-3" class="grid-cell"><span class="zone-name">大南2-3</span><span class="item-count">{location_counts.get('大南2-3', 0)}</span></div>
-            <div id="大南3-3" class="grid-cell"><span class="zone-name">大南3-3</span><span class="item-count">{location_counts.get('大南3-3', 0)}</span></div>
-            <div id="大南4-3" class="grid-cell"><span class="zone-name">大南4-3</span><span class="item-count">{location_counts.get('大南4-3', 0)}</span></div>
-            <div id="大南5-3" class="grid-cell"><span class="zone-name">大南5-3</span><span class="item-count">{location_counts.get('大南5-3', 0)}</span></div>
-            <div id="大南6-3" class="grid-cell"><span class="zone-name">大南6-3</span><span class="item-count">{location_counts.get('大南6-3', 0)}</span></div>
-            <div id="大南7-3" class="grid-cell"><span class="zone-name">大南7-3</span><span class="item-count">{location_counts.get('大南7-3', 0)}</span></div>
-            <div id="大南8-3" class="grid-cell"><span class="zone-name">大南8-3</span><span class="item-count">{location_counts.get('大南8-3', 0)}</span></div>
-        </div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+    in_warehouse_df = df_all_items[df_all_items['status'] == 'in_warehouse']
+    moved_out_df = df_all_items[df_all_items['status'] == 'moved_out'].sort_values(by='moved_out_at', ascending=False)
 
-# --- 在庫リストの表示 --- #
-st.header("倉庫内在庫リスト")
-if in_warehouse_items:
-    df_in_warehouse = pd.DataFrame(in_warehouse_items, columns=in_warehouse_items[0].keys())
-    st.dataframe(df_in_warehouse[['product_number', 'description', 'location']], use_container_width=True)
+    with st.expander("倉庫内在庫リスト"):
+        if not in_warehouse_df.empty:
+            st.dataframe(in_warehouse_df[['product_number', 'description', 'location']], use_container_width=True)
+        else:
+            st.info("現在、倉庫内に在庫はありません。")
+    
+    with st.expander("持ち出し履歴"):
+        if not moved_out_df.empty:
+            st.dataframe(moved_out_df[['product_number', 'description', 'location', 'moved_out_to', 'moved_out_at']], use_container_width=True)
+        else:
+            st.info("持ち出し履歴はありません。")
 else:
-    st.info("現在、倉庫内に在庫はありません。")
+    st.info("データベースにアイテムが見つかりません。")
 
-# --- 持ち出し履歴の表示 --- #
-st.header("持ち出し履歴")
-conn = get_db_connection()
-moved_out_items = conn.execute("SELECT * FROM items WHERE status = 'moved_out'").fetchall()
-conn.close()
-
-if moved_out_items:
-    df_moved_out = pd.DataFrame(moved_out_items, columns=moved_out_items[0].keys())
-    st.dataframe(df_moved_out[['product_number', 'description', 'location', 'moved_out_to', 'moved_out_at']], use_container_width=True)
-else:
-    st.info("持ち出し履歴はありません。")
+# --- データ更新ボタン ---
+if st.button("最新の情報に更新"):
+    st.rerun()
