@@ -45,11 +45,14 @@ for item in in_warehouse_items:
 # --- HTMLとCSSの読み込みと結合 ---
 try:
     # styles.cssの内容を読み込む
-    with open(os.path.join("static", "css", "styles.css"), "r", encoding="utf-8") as f:
+    script_dir = os.path.dirname(__file__)
+    css_path = os.path.join(script_dir, "static", "css", "styles.css")
+    with open(css_path, "r", encoding="utf-8") as f:
         css_content = f.read()
 
     # index.htmlの内容を読み込む
-    with open(os.path.join("templates", "index.html"), "r", encoding="utf-8") as f:
+    html_path = os.path.join(script_dir, "templates", "index.html")
+    with open(html_path, "r", encoding="utf-8") as f:
         index_html_content = f.read()
 
 except FileNotFoundError as e:
