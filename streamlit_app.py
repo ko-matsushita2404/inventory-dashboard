@@ -1,8 +1,9 @@
 import streamlit as st
-st.markdown("<h1>テスト: HTMLレンダリング確認</h1><p style=\"color:red;\">このテキストが赤色で表示されれば成功です。</p>", unsafe_allow_html=True)
 import sqlite3
 import pandas as pd
 import re
+import os
+from streamlit.components.v1 import html
 
 DATABASE = 'inventory.db'
 
@@ -29,8 +30,7 @@ except Exception as e:
 # --- 在庫数の集計 ---
 location_counts = {}
 # HTMLから場所名を抽出するための正規表現 (例: 大北1-1, 小左1段)
-# id="大北1-1" または zone-name>大北1-1</span> のようなパターンにマッチ
-pattern = re.compile(r'id="([^"]+)"|zone-name">([^<]+)<')
+pattern = re.compile(r'(大北|大南|小左|小右)[0-9-]+(?=[<"])')
 
 for item in in_warehouse_items:
     if not item['location'] or not isinstance(item['location'], str):
@@ -42,182 +42,66 @@ for item in in_warehouse_items:
         if location:
             location_counts[location] = location_counts.get(location, 0) + 1
 
-# --- CSSスタイル --- (static/css/styles.css と index.html のスタイルを統合)
-css_style = """
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f4f4f4;
-        color: #333;
-    }
-    h1, h2 { color: #333; }
-    .button-group { margin-top: 20px; margin-bottom: 20px; }
-    .button-group a, .button-group button {
-        display: inline-block;
-        padding: 10px 15px;
-        margin-right: 10px;
-        background-color: #007bff;
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
-        border: none;
-        cursor: pointer;
-    }
-    .button-group a:hover, .button-group button:hover { background-color: #0056b3; }
-    .moved-out-button { background-color: #dc3545; }
-    .moved-out-button:hover { background-color: #c82333; }
+# --- HTMLとCSSの読み込みと結合 ---
+try:
+    # styles.cssの内容を読み込む
+    with open(os.path.join("static", "css", "styles.css"), "r", encoding="utf-8") as f:
+        css_content = f.read()
 
-    .container {
-        display: flex;
-        padding: 20px;
-        gap: 20px;
-    }
-    .item-area {
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        padding: 20px;
-    }
-    #shelf-area {
-        flex: 3;
-    }
+    # index.htmlの内容を読み込む
+    with open(os.path.join("templates", "index.html"), "r", encoding="utf-8") as f:
+        index_html_content = f.read()
 
-    /* 小エリアのスタイル */
-    .small-inventory-map {
-        margin-bottom: 30px;
-        width: 600px; /* 小エリア全体の幅 */
-        margin-left: auto;
-        margin-right: auto;
-    }
-    .small-area-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr); /* 2列を維持 */
-        gap: 10px;
-        background-color: #e9e9e9;
-        padding: 10px;
-        border-radius: 5px;
-    }
+except FileNotFoundError as e:
+    st.error(f"必要なファイルが見つかりません: {e}. 'static/css/styles.css' または 'templates/index.html' が存在するか確認してください。")
+    st.stop()
 
-    /* 大エリアのスタイル */
-    .large-inventory-map {
-        display: grid;
-        grid-template-columns: 1fr 1fr; /* 大北と大南を横並びにする */
-        gap: 20px;
-    }
-    .large-inventory-map .top-right-grid,
-    .large-inventory-map .bottom-right-grid {
-        display: grid;
-        gap: 10px;
-        background-color: #e9e9e9;
-        padding: 10px;
-        border-radius: 5px;
-    }
-    .large-inventory-map .top-right-grid {
-        grid-template-columns: repeat(9, 1fr);
-    }
-    .large-inventory-map .bottom-right-grid {
-        grid-template-columns: repeat(8, 1fr);
-    }
+# Flaskのurl_forを削除し、スタイルシートを直接埋め込む
+index_html_content = index_html_content.replace(
+    "    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">",
+    f"    <style>{css_content}</style>"
+)
+# Flaskのurl_forを削除 (JavaScriptの読み込み部分)
+index_html_content = index_html_content.replace(
+    "    <script src="{{ url_for('static', filename='js/board.js') }}"></script>",
+    "" # JavaScriptはStreamlitのiframe内では直接実行できないため削除
+)
+# Flaskのurl_forを削除 (ボタンのリンク)
+index_html_content = index_html_content.replace("{{ url_for('upload_csv') }}", "#")
+index_html_content = index_html_content.replace("{{ url_for('moved_out_history') }}", "#")
+index_html_content = index_html_content.replace("{{ url_for('item_detail', item_id=item.id) }}", "#")
+index_html_content = index_html_content.replace("{{ url_for('move_out', item_id=item.id) }}", "#")
 
-    .grid-cell {
-        background-color: #f0f0f0;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 10px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 60px; /* Adjust as needed */
-        position: relative;
-    }
-    .zone-name {
-        font-weight: bold;
-        color: #555;
-        margin-bottom: 5px;
-    }
-    .item-count {
-        font-size: 1.5em;
-        font-weight: bold;
-        color: #007bff;
-    }
 
-    /* 詳細在庫リストのスタイル */
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
-</style>
-"""
+# 在庫数をHTMLに注入
+# index.htmlの各grid-cellにitem-countスパンを追加
+def inject_counts_into_html(html_string, counts_dict):
+    modified_html = html_string
+    for location_name, count in counts_dict.items():
+        # 既存のzone-nameスパンの直後にitem-countスパンを挿入
+        # id属性を持つdivを探し、その中のspan.zone-nameの閉じタグの直後に挿入
+        # 例: <div id="大北1-1" ...><span class="zone-name">大北1-1</span><span class="item-count">0</span></div>
+        # 正規表現でidとzone-nameを特定し、その間にitem-countを挿入
+        # modified_html = re.sub(
+        #     rf'(<div id="{re.escape(location_name)}"[^>]*>.*?<span class="zone-name">{re.escape(location_name)}</span>)',
+        #     r'<span class="item-count">' + str(count) + '</span>',
+        #     modified_html,
+        #     flags=re.DOTALL
+        # )
+        # シンプルに、idを持つdivの閉じタグの直前に挿入
+        modified_html = modified_html.replace(
+            f'<div id="{location_name}" class="grid-cell"><span class="zone-name">{location_name}</span></div>',
+            f'<div id="{location_name}" class="grid-cell"><span class="zone-name">{location_name}</span><span class="item-count">{count}</span></div>'
+        )
+    return modified_html
 
-# --- HTMLコンテンツの生成 --- (index.html の構造を再現)
-html_content = f"""
-<div class="container">
-    <div id="shelf-area" class="item-area">
-        <h2>小エリア在庫マップ</h2>
-        <div class="small-inventory-map">
-            <div class="small-area-grid">
-"""
-# 小エリアのグリッドセルを動的に生成
-small_area_locations = [
-    "小左1段", "小右1段",
-    "小左2段", "小右2段",
-    "小左3段", "小右3段"
-]
-for loc_name in small_area_locations:
-    count = location_counts.get(loc_name, 0)
-    html_content += f"""
-                <div id="{loc_name}" class="grid-cell">
-                    <span class="zone-name">{loc_name}</span>
-                    <span class="item-count">{count}</span>
-                </div>
-"""
-html_content += f"""
-            </div>
-        </div>
-
-        <h2>大エリア在庫マップ</h2>
-        <div class="large-inventory-map">
-            <div class="top-right-grid">
-"""
-# 大北エリアのグリッドセルを動的に生成
-for i in range(1, 4):
-    for j in range(1, 10):
-        loc_name = f"大北{j}-{i}"
-        count = location_counts.get(loc_name, 0)
-        html_content += f"""
-                <div id="{loc_name}" class="grid-cell">
-                    <span class="zone-name">{loc_name}</span>
-                    <span class="item-count">{count}</span>
-                </div>
-"""
-html_content += f"""
-            </div>
-            <div class="bottom-right-grid">
-"""
-# 大南エリアのグリッドセルを動的に生成
-for i in range(1, 4):
-    for j in range(1, 9):
-        loc_name = f"大南{j}-{i}"
-        count = location_counts.get(loc_name, 0)
-        html_content += f"""
-                <div id="{loc_name}" class="grid-cell">
-                    <span class="zone-name">{loc_name}</span>
-                    <span class="item-count">{count}</span>
-                </div>
-"""
-html_content += f"""
-            </div>
-        </div>
-    </div>
-</div>
-"""
+final_html_for_display = inject_counts_into_html(index_html_content, location_counts)
 
 # --- Streamlitでの表示 ---
-st.markdown(css_style, unsafe_allow_html=True)
-st.markdown(html_content, unsafe_allow_html=True)
+st.header("在庫マップ")
+# st.components.v1.htmlを使用してHTMLをレンダリング
+# heightとscrollingは必要に応じて調整
+html(final_html_for_display, height=800, scrolling=True)
 
 # --- 詳細在庫リストと持ち出し履歴 (StreamlitのDataFrameを使用) ---
 st.header("詳細在庫リスト")
@@ -226,10 +110,10 @@ if all_items_for_df:
     df_all_items = pd.DataFrame(all_items_for_df, columns=all_items_for_df[0].keys())
     
     # locationカラムのHTMLをクリーンアップして表示
-    def clean_location_for_display(location_html):
-        if not isinstance(location_html, str):
+    def clean_location_for_display(location_html_data):
+        if not isinstance(location_html_data, str):
             return ""
-        matches = pattern.findall(location_html)
+        matches = pattern.findall(location_html_data)
         cleaned_locations = []
         for match in matches:
             location = next((loc for loc in match if loc), None)
