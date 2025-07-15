@@ -66,7 +66,7 @@ index_html_content = index_html_content.replace(
 )
 # Flaskのurl_forを削除 (JavaScriptの読み込み部分)
 index_html_content = index_html_content.replace(
-    "    <script src="{{ url_for('static', filename='js/board.js') }}"></script>",
+    """    <script src="{{ url_for('static', filename='js/board.js') }}"></script>""",
     "" # JavaScriptはStreamlitのiframe内では直接実行できないため削除
 )
 # Flaskのurl_forを削除 (ボタンのリンク)
