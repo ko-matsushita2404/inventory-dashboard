@@ -61,7 +61,7 @@ except FileNotFoundError as e:
 
 # Flaskのurl_forを削除し、スタイルシートを直接埋め込む
 index_html_content = index_html_content.replace(
-    "    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">",
+    """    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">""",
     f"    <style>{css_content}</style>"
 )
 # Flaskのurl_forを削除 (JavaScriptの読み込み部分)
