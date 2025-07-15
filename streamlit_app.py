@@ -1,5 +1,5 @@
 import streamlit as st
-st.write("## これはGeminiによる修正版です - 表示確認用")
+st.markdown("<h1>テスト: HTMLレンダリング確認</h1><p style=\"color:red;\">このテキストが赤色で表示されれば成功です。</p>", unsafe_allow_html=True)
 import sqlite3
 import pandas as pd
 import re
