@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アイテム詳細 - 在庫管理システム</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        .item-details { 
+            background-color: #f8f9fa; 
+            padding: 20px; 
+            border-radius: 5px; 
+            margin-bottom: 20px; 
+        }
+        .detail-row { margin-bottom: 10px; }
+        .detail-label { font-weight: bold; display: inline-block; width: 120px; }
+        .button-group { margin-top: 20px; }
+        .button-group a, .button-group button { 
+            display: inline-block; 
+            padding: 10px 15px; 
+            margin-right: 10px; 
+            background-color: #007bff; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            border: none; 
+            cursor: pointer;
+        }
+        .button-group a:hover, .button-group button:hover { background-color: #0056b3; }
+        .move-out-button { background-color: #dc3545; }
+        .move-out-button:hover { background-color: #c82333; }
+        .status-badge { 
+            padding: 4px 8px; 
+            border-radius: 3px; 
+            font-size: 12px; 
+            font-weight: bold; 
+        }
+        .status-in-warehouse { background-color: #28a745; color: white; }
+        .status-moved-out { background-color: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <h1>アイテム詳細</h1>
+    
+    <div class="item-details">
+        <div class="detail-row">
+            <span class="detail-label">製品番号:</span>
+            <span>{{ item.product_number }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">品目カテゴリ:</span>
+            <span>{{ item.item_category or '-' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">説明:</span>
+            <span>{{ item.description or '-' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">保管場所:</span>
+            <span>{{ item.location or '-' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">ステータス:</span>
+            {% if item.status == 'in_warehouse' %}
+            <span class="status-badge status-in-warehouse">在庫中</span>
+            {% elif item.status == 'moved_out' %}
+            <span class="status-badge status-moved-out">持ち出し済み</span>
+            {% endif %}
+        </div>
+        {% if item.status == 'moved_out' %}
+        <div class="detail-row">
+            <span class="detail-label">移動先:</span>
+            <span>{{ item.moved_out_to or '-' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">移動日時:</span>
+            <span>{{ item.moved_out_at or '-' }}</span>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="button-group">
+        <a href="{{ url_for('index') }}">← メインページに戻る</a>
+        {% if item.status == 'in_warehouse' %}
+        <a href="{{ url_for('move_out', item_id=item.id) }}" class="move-out-button">持ち出す</a>
+        {% endif %}
+    </div>
+
+    {% if similar_items %}
+    <h2>同じ保管場所の類似アイテム</h2>
+    <ul>
+        {% for s_item in similar_items %}
+        <li><a href="{{ url_for('item_detail', item_id=s_item.id) }}">{{ s_item.product_number }} - {{ s_item.description }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</body>
+</html>
