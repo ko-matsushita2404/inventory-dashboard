@@ -20,19 +20,32 @@ st.title("在庫状況ダッシュボード")
 # --- データ取得 ---
 try:
     conn = get_db_connection()
+<<<<<<< HEAD
     in_warehouse_items_for_display = conn.execute("SELECT product_number, location FROM items WHERE status = 'in_warehouse'").fetchall()
+=======
+    in_warehouse_items = conn.execute("SELECT location FROM items WHERE status = 'in_warehouse'").fetchall()
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
     all_items_for_df = conn.execute("SELECT * FROM items").fetchall()
     conn.close()
 except Exception as e:
     st.error(f"データベースエラーが発生しました: {e}")
     st.stop()
 
+<<<<<<< HEAD
 # --- 在庫数の集計 (製番表示に変更) ---
 location_product_numbers = {}
 # HTMLから場所名を抽出するための正規表現 (例: 大北1-1, 小左1段)
 pattern = re.compile(r'(大北|大南|小左|小右)[0-9-]+(?=[<"])')
 
 for item in in_warehouse_items_for_display:
+=======
+# --- 在庫数の集計 ---
+location_counts = {}
+# HTMLから場所名を抽出するための正規表現 (例: 大北1-1, 小左1段)
+pattern = re.compile(r'(大北|大南|小左|小右)[0-9-]+(?=[<"])')
+
+for item in in_warehouse_items:
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
     if not item['location'] or not isinstance(item['location'], str):
         continue
     
@@ -40,9 +53,13 @@ for item in in_warehouse_items_for_display:
     for match in matches:
         location = next((loc for loc in match if loc), None)
         if location:
+<<<<<<< HEAD
             if location not in location_product_numbers:
                 location_product_numbers[location] = []
             location_product_numbers[location].append(item['product_number'])
+=======
+            location_counts[location] = location_counts.get(location, 0) + 1
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 
 # --- HTMLとCSSの読み込みと結合 ---
 try:
@@ -80,6 +97,7 @@ index_html_content = index_html_content.replace("{{ url_for('move_out', item_id=
 
 # 在庫数をHTMLに注入
 # index.htmlの各grid-cellにitem-countスパンを追加
+<<<<<<< HEAD
 def inject_product_numbers_into_html(html_string, product_numbers_dict):
     modified_html = html_string
     for location_name, product_numbers in product_numbers_dict.items():
@@ -91,6 +109,29 @@ def inject_product_numbers_into_html(html_string, product_numbers_dict):
     return modified_html
 
 final_html_for_display = inject_product_numbers_into_html(index_html_content, location_product_numbers)
+=======
+def inject_counts_into_html(html_string, counts_dict):
+    modified_html = html_string
+    for location_name, count in counts_dict.items():
+        # 既存のzone-nameスパンの直後にitem-countスパンを挿入
+        # id属性を持つdivを探し、その中のspan.zone-nameの閉じタグの直後に挿入
+        # 例: <div id="大北1-1" ...><span class="zone-name">大北1-1</span><span class="item-count">0</span></div>
+        # 正規表現でidとzone-nameを特定し、その間にitem-countを挿入
+        # modified_html = re.sub(
+        #     rf'(<div id="{re.escape(location_name)}"[^>]*>.*?<span class="zone-name">{re.escape(location_name)}</span>)',
+        #     r'<span class="item-count">' + str(count) + '</span>',
+        #     modified_html,
+        #     flags=re.DOTALL
+        # )
+        # シンプルに、idを持つdivの閉じタグの直前に挿入
+        modified_html = modified_html.replace(
+            f'<div id="{location_name}" class="grid-cell"><span class="zone-name">{location_name}</span></div>',
+            f'<div id="{location_name}" class="grid-cell"><span class="zone-name">{location_name}</span><span class="item-count">{count}</span></div>'
+        )
+    return modified_html
+
+final_html_for_display = inject_counts_into_html(index_html_content, location_counts)
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 
 # --- Streamlitでの表示 ---
 st.header("在庫マップ")
@@ -98,6 +139,7 @@ st.header("在庫マップ")
 # heightとscrollingは必要に応じて調整
 html(final_html_for_display, height=800, scrolling=True)
 
+<<<<<<< HEAD
 # StreamlitからHTMLへのメッセージング (クリックイベントの受信)
 if "selected_location" not in st.session_state:
     st.session_state.selected_location = None
@@ -108,6 +150,8 @@ if "location" in query_params:
     st.session_state.selected_location = query_params["location"][0]
     st.experimental_set_query_params() # クエリパラメータをクリア
 
+=======
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 # --- 詳細在庫リストと持ち出し履歴 (StreamlitのDataFrameを使用) ---
 st.header("詳細在庫リスト")
 
@@ -128,6 +172,7 @@ if all_items_for_df:
 
     df_all_items['location'] = df_all_items['location'].apply(clean_location_for_display)
 
+<<<<<<< HEAD
     # 選択された棚に基づいてフィルタリング
     if st.session_state.selected_location:
         st.subheader(f"選択された棚: {st.session_state.selected_location} の在庫")
@@ -152,6 +197,22 @@ if all_items_for_df:
                 st.dataframe(moved_out_df[['product_number', 'item_category', 'description', 'location', 'moved_out_to', 'moved_out_at']], use_container_width=True)
             else:
                 st.info("持ち出し履歴はありません。")
+=======
+    in_warehouse_df = df_all_items[df_all_items['status'] == 'in_warehouse']
+    moved_out_df = df_all_items[df_all_items['status'] == 'moved_out'].sort_values(by='moved_out_at', ascending=False)
+
+    with st.expander("倉庫内在庫リスト"):
+        if not in_warehouse_df.empty:
+            st.dataframe(in_warehouse_df[['product_number', 'description', 'location']], use_container_width=True)
+        else:
+            st.info("現在、倉庫内に在庫はありません。")
+    
+    with st.expander("持ち出し履歴"):
+        if not moved_out_df.empty:
+            st.dataframe(moved_out_df[['product_number', 'description', 'location', 'moved_out_to', 'moved_out_at']], use_container_width=True)
+        else:
+            st.info("持ち出し履歴はありません。")
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 else:
     st.info("データベースにアイテムが見つかりません。")
 

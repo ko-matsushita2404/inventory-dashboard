@@ -2,18 +2,29 @@ from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 import csv
 import os
+<<<<<<< HEAD
 import datetime
+=======
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 
 app = Flask(__name__)
-DATABASE = 'inventory.db'
 
+# データベースファイルのパスを環境変数から取得、なければローカルのパスを使用
+DATABASE = os.environ.get('DATABASE_URL', 'inventory.db')
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 def init_db():
     with app.app_context():
         conn = get_db_connection()
@@ -21,7 +32,10 @@ def init_db():
             CREATE TABLE IF NOT EXISTS items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 product_number TEXT NOT NULL,
+<<<<<<< HEAD
                 item_category TEXT,  -- 新しいカラムを追加
+=======
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
                 description TEXT,
                 location TEXT,
                 status TEXT DEFAULT 'in_warehouse',
@@ -32,11 +46,15 @@ def init_db():
         conn.commit()
         conn.close()
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 @app.route('/')
 def index():
     conn = get_db_connection()
     items = conn.execute("SELECT * FROM items WHERE status = 'in_warehouse'").fetchall()
+<<<<<<< HEAD
 
     # 場所ごとの在庫数を集計
     location_counts = {}
@@ -73,6 +91,18 @@ def index():
                            location_product_numbers=location_product_numbers,
                            location_items=location_items)
 
+=======
+    
+    # 場所ごとの在庫数を集計
+    location_counts = {}
+    for item in items:
+        if item['location'] not in location_counts:
+            location_counts[item['location']] = 0
+        location_counts[item['location']] += 1
+
+    conn.close()
+    return render_template('index.html', items=items, location_counts=location_counts)
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 
 @app.route('/upload_csv', methods=['GET', 'POST'])
 def upload_csv():
@@ -90,6 +120,7 @@ def upload_csv():
             conn = get_db_connection()
             with open(filepath, 'r', encoding='utf-8') as f:
                 csv_reader = csv.reader(f)
+<<<<<<< HEAD
                 headers = next(csv_reader)  # Skip header row
                 for row in csv_reader:
                     # CSV columns: A=Timeline (row[0]), B=Product Number (row[1]), C=Item Category (row[2]), D=Description (row[3]), E=Location (row[4])
@@ -117,10 +148,31 @@ def upload_csv():
     return render_template('upload.html')
 
 
+=======
+                headers = next(csv_reader) # Skip header row
+                for row in csv_reader:
+                    # Assuming CSV columns are: product_number, description, location
+                    # Adjust indices if your CSV has different order/more columns
+                    # CSV columns: A=Timeline, B=Product Number, C=Description, D=Location
+                    product_number = row[1] if len(row) > 1 else ''
+                    description = row[2] if len(row) > 2 else ''
+                    location = row[3] if len(row) > 3 else ''
+                    conn.execute(
+                        "INSERT INTO items (product_number, description, location) VALUES (?, ?, ?)",
+                        (product_number, description, location)
+                    )
+                conn.commit()
+            conn.close()
+            os.remove(filepath) # Clean up uploaded file
+            return redirect(url_for('index'))
+    return render_template('upload.html')
+
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 @app.route('/item/<int:item_id>')
 def item_detail(item_id):
     conn = get_db_connection()
     item = conn.execute('SELECT * FROM items WHERE id = ?', (item_id,)).fetchone()
+<<<<<<< HEAD
     if item is None:
         conn.close()
         return "Item not found", 404
@@ -134,6 +186,12 @@ def item_detail(item_id):
     conn.close()
     return render_template('detail.html', item=item, similar_items=similar_items)
 
+=======
+    conn.close()
+    if item is None:
+        return "Item not found", 404
+    return render_template('detail.html', item=item)
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 
 @app.route('/move_out/<int:item_id>', methods=['GET', 'POST'])
 def move_out(item_id):
@@ -145,8 +203,13 @@ def move_out(item_id):
 
     if request.method == 'POST':
         moved_out_to = request.form['moved_out_to']
+<<<<<<< HEAD
         moved_out_at = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         # SQLの修正：WHERE句にitem_idを追加
+=======
+        import datetime
+        moved_out_at = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
         conn.execute(
             "UPDATE items SET status = 'moved_out', moved_out_to = ?, moved_out_at = ? WHERE id = ?",
             (moved_out_to, moved_out_at, item_id)
@@ -154,11 +217,18 @@ def move_out(item_id):
         conn.commit()
         conn.close()
         return redirect(url_for('index'))
+<<<<<<< HEAD
 
     conn.close()
     return render_template('move_out.html', item=item)
 
 
+=======
+    
+    conn.close()
+    return render_template('move_out.html', item=item)
+
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 @app.route('/moved_out_history')
 def moved_out_history():
     conn = get_db_connection()
@@ -166,7 +236,10 @@ def moved_out_history():
     conn.close()
     return render_template('history.html', items=items)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
 @app.route('/clear_moved_out_history', methods=['POST'])
 def clear_moved_out_history():
     conn = get_db_connection()
@@ -175,6 +248,7 @@ def clear_moved_out_history():
     conn.close()
     return redirect(url_for('moved_out_history'))
 
+<<<<<<< HEAD
 
 # 場所別のアイテム一覧を取得するAPIエンドポイント（オプション）
 @app.route('/api/location/<location>')
@@ -202,3 +276,8 @@ def get_items_by_location(location):
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
+=======
+if __name__ == '__main__':
+    init_db()
+    app.run(debug=True)
+>>>>>>> 333b946b7ae5a8209b55c4d4d0194c5a67f5cd8a
