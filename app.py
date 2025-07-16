@@ -34,6 +34,12 @@ def init_db():
         conn.commit()
         conn.close()
 
+# --- 追加ここから ---
+INTERNAL_LOCATIONS_PREFIX = ['大北','大南','小右','小左']
+
+def is_internal_location(location_name):
+    return any(location_name.startswith(prefix) for prefix in INTERNAL_LOCATIONS_PREFIX)
+# --- 追加ここまで ---
 
 @app.route('/')
 def index():
@@ -155,11 +161,20 @@ def move_out(item_id):
     if request.method == 'POST':
         moved_out_to = request.form['moved_out_to']
         moved_out_at = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        # SQLの修正：WHERE句にitem_idを追加
-        conn.execute(
-            "UPDATE items SET status = 'moved_out', moved_out_to = ?, moved_out_at = ? WHERE id = ?",
-            (moved_out_to, moved_out_at, item_id)
-        )
+
+        if is_internal_location(moved_out_to):
+            # 構内移動：ステータスはそのままで location のみ更新
+            conn.execute(
+                "UPDATE items SET location = ? WHERE id = ?",
+                (moved_out_to, item_id)
+            )
+        else:
+            # 構外移動：ステータス更新、履歴記録
+            conn.execute(
+                "UPDATE items SET status = 'moved_out', moved_out_to = ?, moved_out_at = ? WHERE id = ?",
+                (moved_out_to, moved_out_at, item_id)
+            )
+
         conn.commit()
         conn.close()
         return redirect(url_for('index'))
