@@ -1,4 +1,0 @@
-Flask
-streamlit
-pandas
-gunicorn
