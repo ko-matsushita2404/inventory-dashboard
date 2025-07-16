@@ -27,6 +27,56 @@
         .button-group a:hover, .button-group button:hover { background-color: #0056b3; }
         .moved-out-button { background-color: #dc3545; }
         .moved-out-button:hover { background-color: #c82333; }
+        <style>
+@media (max-width: 768px) {
+    .small-area-grid, .top-right-grid, .bottom-right-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* スマホ画面では2列にする */
+        gap: 10px;
+    }
+
+    .grid-cell {
+        font-size: 12px;
+        padding: 10px;
+        word-wrap: break-word;
+    }
+
+    .zone-name {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 4px;
+    }
+
+    .product-numbers {
+        display: block;
+        font-size: 10px;
+        color: #666;
+    }
+
+    .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .button-group a, .button-group button {
+        width: 100%;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        width: 100%;
+    }
+
+    th, td {
+        font-size: 12px;
+    }
+}
+</style>
+
     </style>
 </head>
 <body>
