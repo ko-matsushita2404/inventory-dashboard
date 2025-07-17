@@ -87,6 +87,21 @@
         <a href="{{ url_for('moved_out_history') }}">持ち出し履歴を見る</a>
     </div>
 
+    <form action="{{ url_for('search') }}" method="post">
+        <input type="text" name="product_number" placeholder="製番で検索">
+        <button type="submit">検索</button>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class=flashes>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
     <div class="container">
         <div id="shelf-area" class="item-area">
             <h2>小エリア在庫マップ</h2>
