@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <meta name="viewport" content="width=1024">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>在庫管理システム</title>
@@ -156,9 +157,13 @@
             
             for (const locationId in productNumbersData) {
                 const productNumbers = productNumbersData[locationId];
-                const productNumbersSpan = document.querySelector(`#${CSS.escape(locationId)} .product-numbers`);
-                if (productNumbersSpan) {
-                    productNumbersSpan.textContent = productNumbers.join(', ');
+                const cell = document.getElementById(locationId);
+                if (cell) {
+                    const productNumbersSpan = cell.querySelector('.product-numbers');
+                    if (productNumbersSpan) {
+                        productNumbersSpan.textContent = productNumbers.join(', ');
+                        cell.setAttribute('data-fulltext', productNumbers.join(', '));
+                    }
                 } else {
                     console.warn(`Element not found for location: ${locationId}`);
                 }
