@@ -68,6 +68,8 @@ body {
     align-items: center;
     min-height: 60px; /* セルの最小高さを設定 */
     position: relative;
+    overflow: hidden; /* はみ出た内容を隠す */
+    min-width: 0; /* グリッドアイテムがコンテンツより小さくなることを許可 */
 }
 
 .grid-cell:hover {
