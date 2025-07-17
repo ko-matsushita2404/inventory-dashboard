@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 import sqlite3
 import csv
 import os
@@ -237,7 +237,22 @@ def item_by_product_location(product_number, location):
         return "Item not found in this location with this product number", 404
 
 
+@app.route('/search', methods=['POST'])
+def search():
+    product_number = request.form['product_number']
+    conn = get_db_connection()
+    item = conn.execute("SELECT * FROM items WHERE product_number = ? AND status = 'in_warehouse' LIMIT 1", (product_number,)).fetchone()
+    conn.close()
+
+    if item:
+        return redirect(url_for('item_detail', item_id=item['id']))
+    else:
+        flash('その製番のアイテムは見つかりませんでした。')
+        return redirect(url_for('index'))
+
+
 if __name__ == '__main__':
     init_db()
+    app.secret_key = 'super_secret_key'
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
