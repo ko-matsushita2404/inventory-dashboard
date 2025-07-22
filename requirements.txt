@@ -1,0 +1,6 @@
+Flask
+streamlit
+supabase
+python-dotenv
+pandas
+gunicorn
