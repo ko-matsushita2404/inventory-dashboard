@@ -3,6 +3,7 @@ import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import datetime
+import logging
 
 # .envファイルから環境変数を読み込む
 load_dotenv()
@@ -14,7 +15,30 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_ANON_KEY")
 app.secret_key = os.environ.get("SECRET_KEY")
 
+# ログ設定
+logging.basicConfig(level=logging.INFO)
+
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+def safe_int_convert(value, default=0):
+    """安全な整数変換"""
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def escape_search_term(term):
+    """検索文字列のエスケープ"""
+    if not term:
+        return ""
+    # PostgreSQLのLIKE用特殊文字をエスケープ
+    term = term.replace('%', '\\%').replace('_', '\\_')
+    return f"%{term}%"
+
 
 # === Main Read-Only Routes ===
 
@@ -24,19 +48,21 @@ def index():
         response = supabase.table('parts').select('*').order('created_at', desc=True).limit(100).execute()
         items = response.data or []
     except Exception as e:
-        flash(f"データの取得中にエラーが発生しました: {e}", "error")
+        app.logger.error(f"データ取得エラー: {str(e)}")
+        flash("データの取得中にエラーが発生しました。", "error")
         items = []
     return render_template('index.html', items=items)
 
+
 @app.route('/search', methods=['POST'])
 def search():
-    search_term = request.form.get('search_term')
+    search_term = request.form.get('search_term', '').strip()
     if not search_term:
         flash("検索キーワードを入力してください。", "info")
         return redirect(url_for('index'))
-    
+
     try:
-        search_query = f"%{search_term}%"
+        search_query = escape_search_term(search_term)
         response = supabase.table('parts').select('*').or_(
             f'production_no.ilike.{search_query}',
             f'parts_no.ilike.{search_query}',
@@ -53,49 +79,64 @@ def search():
             flash(f"キーワード '{search_term}' に一致する部品は見つかりませんでした。", "info")
             return redirect(url_for('index'))
     except Exception as e:
-        flash(f"検索中にエラーが発生しました: {e}", "error")
+        app.logger.error(f"検索エラー: {str(e)}")
+        flash("検索中にエラーが発生しました。", "error")
         return redirect(url_for('index'))
+
 
 @app.route('/item/<item_id>')
 def item_detail(item_id):
+    # IDの妥当性チェック
+    if not item_id or not str(item_id).isdigit():
+        flash("無効なIDです。", "error")
+        return redirect(url_for('index'))
+
     try:
-        item_response = supabase.table('parts').select('*').eq('id', item_id).single().execute()
+        # single()の代わりに通常のselectを使用
+        item_response = supabase.table('parts').select('*').eq('id', item_id).execute()
+
         if not item_response.data:
             flash("指定された部品が見つかりません。", "error")
             return redirect(url_for('index'))
-        
-        item = item_response.data
+
+        item = item_response.data[0]
         order_slip_no = item.get('order_slip_no')
 
         related_items = []
         if order_slip_no:
-            related_response = supabase.table('parts').select('id, production_no, parts_name, remaining_quantity').eq('order_slip_no', order_slip_no).neq('id', item_id).execute()
+            related_response = supabase.table('parts').select('id, production_no, parts_name, remaining_quantity').eq(
+                'order_slip_no', order_slip_no).neq('id', item_id).execute()
             if related_response.data:
                 related_items = related_response.data
 
     except Exception as e:
-        flash(f"部品詳細の取得中にエラーが発生しました: {e}", "error")
+        app.logger.error(f"部品詳細取得エラー: {str(e)}")
+        flash("部品詳細の取得中にエラーが発生しました。", "error")
         return redirect(url_for('index'))
 
     return render_template('detail.html', item=item, related_items=related_items)
+
 
 @app.route('/map')
 def inventory_map():
     location_items = {}
     location_product_numbers = {}
     try:
-        response = supabase.table('parts').select('id, production_no, storage_location').not_.is_('storage_location', 'null').execute()
+        response = supabase.table('parts').select('id, production_no, storage_location').not_.is_('storage_location',
+                                                                                                  'null').execute()
         if response.data:
             for item in response.data:
                 loc = item['storage_location']
                 if loc not in location_items:
                     location_items[loc] = []
                 location_items[loc].append(item)
-            
+
             for loc, items in location_items.items():
-                location_product_numbers[loc] = list(set([item['production_no'] for item in items]))
+                location_product_numbers[loc] = list(
+                    set([item['production_no'] for item in items if item.get('production_no')]))
     except Exception as e:
-        flash(f"マップデータの取得中にエラーが発生しました: {e}", "error")
+        app.logger.error(f"マップデータ取得エラー: {str(e)}")
+        flash("マップデータの取得中にエラーが発生しました。", "error")
 
     return render_template('map.html', location_items=location_items, location_product_numbers=location_product_numbers)
 
@@ -105,14 +146,13 @@ def inventory_map():
 @app.route('/update', methods=['GET', 'POST'])
 def search_for_update():
     if request.method == 'POST':
-        search_term = request.form.get('search_term')
+        search_term = request.form.get('search_term', '').strip()
         if not search_term:
             flash("検索キーワードを入力してください。", "info")
             return redirect(url_for('search_for_update'))
-        
+
         try:
-            search_query = f"%{search_term}%"
-            # 複数のカラムを対象に横断検索し、すべての関連部品を取得
+            search_query = escape_search_term(search_term)
             response = supabase.table('parts').select('id, production_no, parts_name, order_slip_no').or_(
                 f'production_no.ilike.{search_query}',
                 f'parts_no.ilike.{search_query}',
@@ -123,23 +163,26 @@ def search_for_update():
 
             if response.data:
                 # 検索結果からユニークな発注伝票Noを抽出
-                unique_order_slips = sorted(list(set([item['order_slip_no'] for item in response.data if item.get('order_slip_no')])))
+                unique_order_slips = sorted(
+                    list(set([item['order_slip_no'] for item in response.data if item.get('order_slip_no')])))
 
                 if len(unique_order_slips) == 1:
                     # 1件の発注伝票Noに絞り込めた場合は直接更新画面へ
                     return redirect(url_for('update_slip', order_slip_no=unique_order_slips[0]))
                 else:
                     # 複数件の発注伝票Noが見つかった場合、または検索が曖昧な場合
-                    # 検索結果をそのまま渡して、ユーザーに選択させる
-                    return render_template('update_search_results.html', search_results=response.data, search_term=search_term)
+                    return render_template('update_search_results.html', search_results=response.data,
+                                           search_term=search_term)
             else:
                 flash(f"キーワード '{search_term}' に一致する部品は見つかりませんでした。", "info")
                 return redirect(url_for('search_for_update'))
         except Exception as e:
-            flash(f"検索中にエラーが発生しました: {e}", "error")
+            app.logger.error(f"更新用検索エラー: {str(e)}")
+            flash("検索中にエラーが発生しました。", "error")
             return redirect(url_for('search_for_update'))
-    
+
     return render_template('update_search.html')
+
 
 @app.route('/update/<order_slip_no>', methods=['GET', 'POST'])
 def update_slip(order_slip_no):
@@ -147,58 +190,103 @@ def update_slip(order_slip_no):
         try:
             form_data = request.form
             items_to_update = []
+            errors = []
 
-            # フォームから送信されたデータを解析
+            # フォームから送信されたデータを解析・検証
             for key, delivered_qty_str in form_data.items():
                 if key.startswith('delivered_qty_'):
-                    if not delivered_qty_str or int(delivered_qty_str) == 0:
-                        continue # 更新数量が0のものはスキップ
+                    delivered_qty_str = delivered_qty_str.strip()
+                    if not delivered_qty_str:
+                        continue
+
+                    # 安全な数値変換
+                    delivered_qty = safe_int_convert(delivered_qty_str)
+                    if delivered_qty <= 0:
+                        continue
 
                     item_id = key.split('_')[-1]
-                    delivered_qty = int(delivered_qty_str)
-                    storage_location = form_data.get(f'storage_location_{item_id}')
+                    storage_location = form_data.get(f'storage_location_{item_id}', '').strip()
+
                     items_to_update.append({
                         'id': item_id,
                         'delivered_qty': delivered_qty,
                         'storage_location': storage_location
                     })
-            
+
             if not items_to_update:
                 flash("更新する数量が入力されていません。", "info")
                 return redirect(url_for('update_slip', order_slip_no=order_slip_no))
 
             # データベース更新処理
+            updated_count = 0
             for item_data in items_to_update:
-                # 1. 現在の部品情報を取得
-                item_resp = supabase.table('parts').select('*').eq('id', item_data['id']).single().execute()
-                current_item = item_resp.data
-                
-                previous_quantity = int(current_item['remaining_quantity'])
-                new_quantity = previous_quantity - item_data['delivered_qty']
+                try:
+                    # 現在の部品情報を取得
+                    item_resp = supabase.table('parts').select('*').eq('id', item_data['id']).execute()
 
-                # 2. partsテーブルを更新
-                supabase.table('parts').update({
-                    'remaining_quantity': new_quantity,
-                    'storage_location': item_data['storage_location'],
-                    'updated_at': datetime.now().isoformat()
-                }).eq('id', current_item['id']).execute()
+                    if not item_resp.data:
+                        errors.append(f"部品ID {item_data['id']} が見つかりません")
+                        continue
 
-                # 3. work_historyテーブルに履歴を記録
-                history_data = {
-                    'parts_id': current_item['id'], 'production_no': current_item['production_no'],
-                    'parts_no': current_item['parts_no'], 'order_slip_no': order_slip_no,
-                    'previous_quantity': previous_quantity, 'new_quantity': new_quantity,
-                    'previous_delivery_date': current_item['delivery_date'], 'new_delivery_date': current_item['delivery_date'],
-                    'storage_location': item_data['storage_location'],
-                    'notes': f"[Web更新] 納入数量: {item_data['delivered_qty']}", 'updated_by': 'web_user'
-                }
-                supabase.table('work_history').insert(history_data).execute()
+                    current_item = item_resp.data[0]
+                    previous_quantity = safe_int_convert(current_item.get('remaining_quantity', 0))
+                    new_quantity = previous_quantity - item_data['delivered_qty']
 
-            flash(f"{len(items_to_update)}件の部品情報を正常に更新しました。", "success")
+                    # 在庫不足チェック
+                    if new_quantity < 0:
+                        errors.append(
+                            f"部品 {current_item.get('parts_name', 'Unknown')} の在庫が不足しています (現在: {previous_quantity}, 納入予定: {item_data['delivered_qty']})")
+                        continue
+
+                    # partsテーブルを更新
+                    update_response = supabase.table('parts').update({
+                        'remaining_quantity': new_quantity,
+                        'storage_location': item_data['storage_location'],
+                        'updated_at': datetime.now().isoformat()
+                    }).eq('id', current_item['id']).execute()
+
+                    if hasattr(update_response, 'error') and update_response.error:
+                        errors.append(f"部品ID {item_data['id']} の更新に失敗しました")
+                        continue
+
+                    # work_historyテーブルに履歴を記録
+                    history_data = {
+                        'parts_id': current_item['id'],
+                        'production_no': current_item.get('production_no', ''),
+                        'parts_no': current_item.get('parts_no', ''),
+                        'order_slip_no': order_slip_no,
+                        'previous_quantity': previous_quantity,
+                        'new_quantity': new_quantity,
+                        'previous_delivery_date': current_item.get('delivery_date'),
+                        'new_delivery_date': current_item.get('delivery_date'),
+                        'storage_location': item_data['storage_location'],
+                        'notes': f"[Web更新] 納入数量: {item_data['delivered_qty']}",
+                        'updated_by': 'web_user'
+                    }
+
+                    history_response = supabase.table('work_history').insert(history_data).execute()
+                    if hasattr(history_response, 'error') and history_response.error:
+                        app.logger.warning(f"履歴記録に失敗: {history_response.error.message}")
+
+                    updated_count += 1
+
+                except Exception as item_error:
+                    app.logger.error(f"部品ID {item_data['id']} 更新エラー: {str(item_error)}")
+                    errors.append(f"部品ID {item_data['id']} の処理中にエラーが発生しました")
+
+            # 結果メッセージの表示
+            if updated_count > 0:
+                flash(f"{updated_count}件の部品情報を正常に更新しました。", "success")
+
+            if errors:
+                for error in errors:
+                    flash(error, "warning")
+
             return redirect(url_for('index'))
 
         except Exception as e:
-            flash(f"データ更新中にエラーが発生しました: {e}", "error")
+            app.logger.error(f"データ更新エラー: {str(e)}")
+            flash("データ更新中にエラーが発生しました。", "error")
             return redirect(url_for('update_slip', order_slip_no=order_slip_no))
 
     # GETリクエストの場合
@@ -207,10 +295,11 @@ def update_slip(order_slip_no):
         if not response.data:
             flash(f"発注伝票No '{order_slip_no}' の部品が見つかりません。", "error")
             return redirect(url_for('search_for_update'))
-        
+
         return render_template('update_form.html', items=response.data, order_slip_no=order_slip_no)
     except Exception as e:
-        flash(f"データ取得中にエラーが発生しました: {e}", "error")
+        app.logger.error(f"更新フォーム表示エラー: {str(e)}")
+        flash("データ取得中にエラーが発生しました。", "error")
         return redirect(url_for('search_for_update'))
 
 
