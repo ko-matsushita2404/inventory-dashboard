@@ -42,9 +42,10 @@
     <div class="container">
         <h1 class="mb-4">部品在庫管理システム</h1>
 
-        <!-- データ更新アプリへのリンク -->
+        <!-- ナビゲーションボタン -->
         <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-3">
-            <a href="#" class="btn btn-success">データ更新・入力画面へ (Streamlit)</a>
+            <a href="{{ url_for('inventory_map') }}" class="btn btn-info">在庫マップ表示</a>
+            <a href="{{ STREAMLIT_URL }}" class="btn btn-success" target="_blank">データ更新・入力画面へ</a>
         </div>
 
         <!-- 検索フォーム -->
