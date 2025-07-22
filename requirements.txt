@@ -1,7 +1,0 @@
-Flask
-streamlit
-supabase
-python-dotenv
-pyodbc
-pandas
-gunicorn
