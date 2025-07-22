@@ -105,22 +105,39 @@ def inventory_map():
 @app.route('/update', methods=['GET', 'POST'])
 def search_for_update():
     if request.method == 'POST':
-        slip_no = request.form.get('order_slip_no')
-        if not slip_no:
-            flash("発注伝票Noを入力してください。", "info")
+        search_term = request.form.get('search_term')
+        if not search_term:
+            flash("検索キーワードを入力してください。", "info")
             return redirect(url_for('search_for_update'))
         
-        # Check if slip_no exists
         try:
-            response = supabase.table('parts').select('id').eq('order_slip_no', slip_no).limit(1).execute()
-            if not response.data:
-                flash(f"発注伝票No '{slip_no}' は見つかりませんでした。", "error")
+            search_query = f"%{search_term}%"
+            # 複数のカラムを対象に横断検索し、すべての関連部品を取得
+            response = supabase.table('parts').select('id, production_no, parts_name, order_slip_no').or_(
+                f'production_no.ilike.{search_query}',
+                f'parts_no.ilike.{search_query}',
+                f'parts_name.ilike.{search_query}',
+                f'drawing_no.ilike.{search_query}',
+                f'order_slip_no.ilike.{search_query}'
+            ).execute()
+
+            if response.data:
+                # 検索結果からユニークな発注伝票Noを抽出
+                unique_order_slips = sorted(list(set([item['order_slip_no'] for item in response.data if item.get('order_slip_no')])))
+
+                if len(unique_order_slips) == 1:
+                    # 1件の発注伝票Noに絞り込めた場合は直接更新画面へ
+                    return redirect(url_for('update_slip', order_slip_no=unique_order_slips[0]))
+                else:
+                    # 複数件の発注伝票Noが見つかった場合、または検索が曖昧な場合
+                    # 検索結果をそのまま渡して、ユーザーに選択させる
+                    return render_template('update_search_results.html', search_results=response.data, search_term=search_term)
+            else:
+                flash(f"キーワード '{search_term}' に一致する部品は見つかりませんでした。", "info")
                 return redirect(url_for('search_for_update'))
         except Exception as e:
-            flash(f"伝票検索中にエラーが発生しました: {e}", "error")
+            flash(f"検索中にエラーが発生しました: {e}", "error")
             return redirect(url_for('search_for_update'))
-
-        return redirect(url_for('update_slip', order_slip_no=slip_no))
     
     return render_template('update_search.html')
 
