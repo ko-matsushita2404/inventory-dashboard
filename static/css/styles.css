@@ -1,0 +1,214 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;
+}
+
+.item-area {
+    flex: 1;
+    min-width: 300px;
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#item-list-area {
+    flex: 1;
+}
+
+#shelf-area {
+    flex: 3;
+}
+
+.small-inventory-map, .large-inventory-map {
+    margin-top: 15px;
+}
+
+.top-right-grid, .bottom-right-grid {
+    display: grid;
+    gap: 5px;
+    background-color: #e0e0e0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.small-inventory-map {
+    display: flex;
+    gap: 20px;
+}
+
+.small-area-section {
+    flex: 1;
+}
+
+.small-area-row-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 5px;
+    margin-bottom: 5px;
+    background-color: #e0e0e0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.large-area-row-grid.north {
+    grid-template-columns: repeat(9, 1fr);
+}
+
+.large-area-row-grid.south {
+    grid-template-columns: repeat(8, 1fr);
+}
+
+.grid-cell-pair {
+    display: flex;
+    gap: 2px;
+}
+
+.grid-cell-pair .grid-cell {
+    flex: 1;
+}
+
+.grid-cell {
+    background-color: #ffffff;
+    border: 1px solid #b0b0b0;
+    padding: 10px;
+    text-align: center;
+    border-radius: 4px;
+    cursor: pointer; /* クリック可能であることを示す */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 60px; /* セルの最小高さを設定 */
+    position: relative;
+    overflow: hidden; /* はみ出た内容を隠す */
+    min-width: 0; /* グリッドアイテムがコンテンツより小さくなることを許可 */
+}
+
+.grid-cell:hover {
+    background-color: #e6e6e6;
+}
+
+.zone-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.item-count, .product-numbers {
+    font-size: 0.9em;
+    color: #555;
+}
+
+/* 詳細在庫リストのスタイル */
+#filtered-items-container {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+#filtered-items-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#filtered-items-container th, #filtered-items-container td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#filtered-items-container th {
+    background-color: #f2f2f2;
+}
+
+/* Drag and Drop styles */
+.dropzone {
+    border: 2px dashed #ccc;
+}
+
+.dropzone.drag-over {
+    background-color: #e0ffe0;
+    border-color: #007bff;
+}
+
+.item {
+    background-color: #007bff;
+    color: white;
+    padding: 5px 10px;
+    margin: 5px;
+    border-radius: 3px;
+    cursor: grab;
+}
+
+.item.dragging {
+    opacity: 0.5;
+}
+
+.controls {
+    padding: 20px;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+.controls button {
+    padding: 8px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.controls button:hover {
+    background-color: #218838;
+}
+
+/* 製番（product-numbers）が省略表示されるようにする */
+.product-numbers {
+    font-size: 11px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    position: relative;
+}
+
+/* ホバー時に製番を別枠で全表示する */
+.grid-cell:hover .product-numbers::after {
+    content: attr(data-fulltext);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #fff;
+    border: 1px solid #aaa;
+    padding: 5px;
+    border-radius: 4px;
+    white-space: normal;
+    word-break: break-word;
+    font-size: 16px;
+    color: #000;
+    z-index: 100;
+    width: max-content;
+    max-width: 250px;
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+    display: none; /* Initially hidden */
+}
+
+.grid-cell:hover .product-numbers:hover::after {
+    display: block; /* Show on hover */
+}
+
+
