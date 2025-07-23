@@ -67,6 +67,8 @@ def search():
             return f"%{escaped}%"
 
         search_query = escape_search_term(search_term)
+        app.logger.info(f"[検索語整形後] search_query = {search_query}")
+
 
         or_conditions = ",".join([
             f"production_no.ilike.{search_query}",
@@ -75,6 +77,7 @@ def search():
             f"drawing_no.ilike.{search_query}",
             f"order_slip_no.ilike.{search_query}"
         ])
+　　　　app.logger.info(f"[検索条件] or_conditions = {or_conditions}")
 
         response = supabase.table('parts').select('*').or_(
             or_conditions
@@ -166,6 +169,7 @@ def search_for_update():
                 return f"%{escaped}%"
 
             search_query = escape_search_term(search_term)
+            app.logger.info(f"[検索語整形後] search_query = {search_query}")
 
             or_conditions = ",".join([
                 f"production_no.ilike.{search_query}",
@@ -174,6 +178,7 @@ def search_for_update():
                 f"drawing_no.ilike.{search_query}",
                 f"order_slip_no.ilike.{search_query}"
             ])
+　　　　　　app.logger.info(f"[検索条件] or_conditions = {or_conditions}")
 
             response = supabase.table('parts').select(
                 'id, production_no, parts_name, order_slip_no'
