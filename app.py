@@ -63,13 +63,14 @@ def search():
 
     try:
         def escape_search_term(term):
+            # ワイルドカードと安全性を考慮して整形
             escaped = term.replace('%', '').replace('_', '').strip()
             return f"%{escaped}%"
 
         search_query = escape_search_term(search_term)
         app.logger.info(f"[検索語整形後] search_query = {search_query}")
 
-
+        # OR条件を "|" 区切りで構成
         or_conditions = "|".join([
             f"production_no.ilike.{search_query}",
             f"parts_no.ilike.{search_query}",
@@ -79,22 +80,28 @@ def search():
         ])
         app.logger.info(f"[検索条件] or_conditions = {or_conditions}")
 
-        response = supabase.table('parts').select('*').or_
-    (or_conditions
-).limit(200).execute()
+        # Supabaseに検索クエリを送信
+        response = supabase.table('parts').select('*').or_(
+            or_conditions
+        ).limit(200).execute()
 
+        # 検索結果に応じて分岐
         if response.data:
             if len(response.data) == 1:
+                # 1件だけなら詳細ページへ
                 return redirect(url_for('item_detail', item_id=response.data[0]['id']))
-            return render_template('index.html', items=response.data, search_term=search_term)
+            else:
+                # 複数件なら一覧表示
+                return render_template('index.html', items=response.data, search_term=search_term)
         else:
+            # 0件ならメッセージ表示
             flash(f"キーワード '{search_term}' に一致する部品は見つかりませんでした。", "info")
             return redirect(url_for('index'))
+
     except Exception as e:
         app.logger.error(f"検索エラー: {str(e)}")
         flash("検索中にエラーが発生しました。", "error")
         return redirect(url_for('index'))
-
 
 @app.route('/item/<item_id>')
 def item_detail(item_id):
@@ -164,12 +171,7 @@ def search_for_update():
             return redirect(url_for('search_for_update'))
 
         try:
-            def escape_search_term(term):
-                escaped = term.replace('%', '').replace('_', '').strip()
-                return f"%{escaped}%"
-
             search_query = escape_search_term(search_term)
-            app.logger.info(f"[検索語整形後] search_query = {search_query}")
 
             or_conditions = "|".join([
                 f"production_no.ilike.{search_query}",
@@ -178,34 +180,35 @@ def search_for_update():
                 f"drawing_no.ilike.{search_query}",
                 f"order_slip_no.ilike.{search_query}"
             ])
-            app.logger.info(f"[検索条件] or_conditions = {or_conditions}")
 
             response = supabase.table('parts').select(
-    'id, production_no, parts_name, order_slip_no'
-).or_(or_conditions).limit(200).execute()
-
-            # 以下略...
+                'id, production_no, parts_name, order_slip_no'
+            ).or_(or_conditions).limit(200).execute()
 
             if response.data:
                 # 検索結果からユニークな発注伝票Noを抽出
                 unique_order_slips = sorted(
-                    list(set([item['order_slip_no'] for item in response.data if item.get('order_slip_no')])))
+                    list(set([item['order_slip_no'] for item in response.data if item.get('order_slip_no')]))
+                )
 
                 if len(unique_order_slips) == 1:
                     # 1件の発注伝票Noに絞り込めた場合は直接更新画面へ
                     return redirect(url_for('update_slip', order_slip_no=unique_order_slips[0]))
                 else:
                     # 複数件の発注伝票Noが見つかった場合、または検索が曖昧な場合
-                    return render_template('update_search_results.html', search_results=response.data,
+                    return render_template('update_search_results.html',
+                                           search_results=response.data,
                                            search_term=search_term)
             else:
                 flash(f"キーワード '{search_term}' に一致する部品は見つかりませんでした。", "info")
                 return redirect(url_for('search_for_update'))
+
         except Exception as e:
             app.logger.error(f"更新用検索エラー: {str(e)}")
             flash("検索中にエラーが発生しました。", "error")
             return redirect(url_for('search_for_update'))
 
+    # GETリクエスト → 検索フォーム表示
     return render_template('update_search.html')
 
 
