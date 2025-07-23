@@ -62,13 +62,22 @@ def search():
         return redirect(url_for('index'))
 
     try:
+        def escape_search_term(term):
+            escaped = term.replace('%', '').replace('_', '').strip()
+            return f"%{escaped}%"
+
         search_query = escape_search_term(search_term)
+
+        or_conditions = ",".join([
+            f"production_no.ilike.{search_query}",
+            f"parts_no.ilike.{search_query}",
+            f"parts_name.ilike.{search_query}",
+            f"drawing_no.ilike.{search_query}",
+            f"order_slip_no.ilike.{search_query}"
+        ])
+
         response = supabase.table('parts').select('*').or_(
-            f'production_no.ilike.{search_query}',
-            f'parts_no.ilike.{search_query}',
-            f'parts_name.ilike.{search_query}',
-            f'drawing_no.ilike.{search_query}',
-            f'order_slip_no.ilike.{search_query}'
+            or_conditions
         ).limit(200).execute()
 
         if response.data:
