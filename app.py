@@ -152,14 +152,25 @@ def search_for_update():
             return redirect(url_for('search_for_update'))
 
         try:
+            def escape_search_term(term):
+                escaped = term.replace('%', '').replace('_', '').strip()
+                return f"%{escaped}%"
+
             search_query = escape_search_term(search_term)
-            response = supabase.table('parts').select('id, production_no, parts_name, order_slip_no').or_(
-                f'production_no.ilike.{search_query}',
-                f'parts_no.ilike.{search_query}',
-                f'parts_name.ilike.{search_query}',
-                f'drawing_no.ilike.{search_query}',
-                f'order_slip_no.ilike.{search_query}'
-            ).execute()
+
+            or_conditions = ",".join([
+                f"production_no.ilike.{search_query}",
+                f"parts_no.ilike.{search_query}",
+                f"parts_name.ilike.{search_query}",
+                f"drawing_no.ilike.{search_query}",
+                f"order_slip_no.ilike.{search_query}"
+            ])
+
+            response = supabase.table('parts').select(
+                'id, production_no, parts_name, order_slip_no'
+            ).or_(or_conditions).execute()
+
+            # 以下略...
 
             if response.data:
                 # 検索結果からユニークな発注伝票Noを抽出
