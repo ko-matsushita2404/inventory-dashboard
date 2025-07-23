@@ -77,7 +77,7 @@ def search():
             f"drawing_no.ilike.{search_query}",
             f"order_slip_no.ilike.{search_query}"
         ])
-　　　　app.logger.info(f"[検索条件] or_conditions = {or_conditions}")
+        app.logger.info(f"[検索条件] or_conditions = {or_conditions}")
 
         response = supabase.table('parts').select('*').or_(
             or_conditions
@@ -178,7 +178,7 @@ def search_for_update():
                 f"drawing_no.ilike.{search_query}",
                 f"order_slip_no.ilike.{search_query}"
             ])
-　　　　　　app.logger.info(f"[検索条件] or_conditions = {or_conditions}")
+            app.logger.info(f"[検索条件] or_conditions = {or_conditions}")
 
             response = supabase.table('parts').select(
                 'id, production_no, parts_name, order_slip_no'
