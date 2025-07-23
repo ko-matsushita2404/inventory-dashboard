@@ -79,8 +79,8 @@ def search():
         ])
         app.logger.info(f"[検索条件] or_conditions = {or_conditions}")
 
-        response = supabase.table('parts').select('*').or_(
-    f"({or_conditions})"
+        response = supabase.table('parts').select('*').or_
+    (or_conditions
 ).limit(200).execute()
 
         if response.data:
@@ -182,7 +182,7 @@ def search_for_update():
 
             response = supabase.table('parts').select(
     'id, production_no, parts_name, order_slip_no'
-).or_(f"({or_conditions})").execute()
+).or_(or_conditions).limit(200).execute()
 
             # 以下略...
 
