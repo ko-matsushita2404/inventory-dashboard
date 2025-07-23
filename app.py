@@ -70,7 +70,7 @@ def search():
         app.logger.info(f"[検索語整形後] search_query = {search_query}")
 
 
-        or_conditions = ",".join([
+        or_conditions = "|".join([
             f"production_no.ilike.{search_query}",
             f"parts_no.ilike.{search_query}",
             f"parts_name.ilike.{search_query}",
@@ -171,7 +171,7 @@ def search_for_update():
             search_query = escape_search_term(search_term)
             app.logger.info(f"[検索語整形後] search_query = {search_query}")
 
-            or_conditions = ",".join([
+            or_conditions = "|".join([
                 f"production_no.ilike.{search_query}",
                 f"parts_no.ilike.{search_query}",
                 f"parts_name.ilike.{search_query}",
