@@ -55,6 +55,14 @@ def escape_search_term(term):
 @app.route('/')
 def index():
     try:
+        # --- DEBUG LOG ---
+        app.logger.info(f"[Index Route] Request received. Checking Supabase client.")
+        if supabase and hasattr(supabase, 'options') and supabase.options.headers.get('apikey'):
+            app.logger.info(f"[Index Route] Supabase client seems OK. API key starts with: {supabase.options.headers['apikey'][:5]}...")
+        else:
+            app.logger.error(f"[Index Route] Supabase client is invalid or missing API key!")
+        # --- END DEBUG LOG ---
+
         response = supabase.table('parts').select('*').order('created_at', desc=True).limit(100).execute()
         items = response.data or []
     except Exception as e:
