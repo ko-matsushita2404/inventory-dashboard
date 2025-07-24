@@ -213,7 +213,7 @@ def search_for_update():
         try:
             search_query = escape_search_term(search_term)
 
-            or_conditions = "|".join([
+            or_conditions = ",".join([
                 f"production_no.ilike.{search_query}",
                 f"parts_no.ilike.{search_query}",
                 f"parts_name.ilike.{search_query}",
@@ -224,6 +224,14 @@ def search_for_update():
             response = supabase.table('parts').select(
                 'id, production_no, parts_name, order_slip_no'
             ).or_(or_conditions).limit(200).execute()
+
+            # --- ここからデバッグログ ---
+            app.logger.info(f"[Supabase Response] raw response: {response}")
+            if hasattr(response, 'data') and response.data:
+                app.logger.info(f"[Supabase Response] data received. Count: {len(response.data)}")
+            if hasattr(response, 'error') and response.error:
+                app.logger.error(f"[Supabase Response] error received: {response.error}")
+            # --- ここまでデバッグログ ---
 
             if response.data:
                 # 検索結果からユニークな発注伝票Noを抽出
