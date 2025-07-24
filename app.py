@@ -25,7 +25,10 @@ if SUPABASE_KEY:
 else:
     app.logger.error("Supabase key is MISSING.")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase: Client = create_client(
+    os.environ.get("SUPABASE_URL"),
+    os.environ.get("SUPABASE_ANON_KEY")
+)
 
 
 def safe_int_convert(value, default=0):
