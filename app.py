@@ -94,6 +94,7 @@ def search():
             f"order_slip_no.ilike.{search_query}"
         ])
         app.logger.info(f"[検索条件] or_conditions = {or_conditions}")
+        app.logger.info(f"[Supabase Query Debug] Final search query: {search_query}")
 
         # Supabaseに検索クエリを送信
         response = supabase.table('parts').select('*').or_(
