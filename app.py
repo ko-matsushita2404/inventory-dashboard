@@ -186,6 +186,14 @@ def inventory_map():
     return render_template('map.html', location_items=location_items, location_product_numbers=location_product_numbers)
 
 
+@app.route('/test_search', methods=['POST'])
+def test_search():
+    test_term = request.form.get('test_term', '')
+    app.logger.info(f"[Test Search] Received test_term: {test_term}")
+    flash(f"テストキーワード: {test_term}", "info")
+    return redirect(url_for('index'))
+
+
 # === Data Update (Write) Routes ===
 
 @app.route('/update', methods=['GET', 'POST'])
