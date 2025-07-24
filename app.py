@@ -86,7 +86,7 @@ def search():
         app.logger.info(f"[検索語整形後] search_query = {search_query}")
 
         # OR条件を "|" 区切りで構成
-        or_conditions = "|".join([
+        or_conditions = ",".join([
             f"production_no.ilike.{search_query}",
             f"parts_no.ilike.{search_query}",
             f"parts_name.ilike.{search_query}",
