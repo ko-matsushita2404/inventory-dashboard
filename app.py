@@ -21,7 +21,7 @@ def get_supabase_client():
     """リクエストごとに新しいSupabaseクライアントを生成する"""
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_ANON_KEY")
-    if not supabase_url or not supabase_key:
+    if not supabase_url or not supabase_key or not supabase_key.strip():
         app.logger.error("SupabaseのURLまたはキーが環境変数に設定されていません。")
         return None
     return create_client(supabase_url, supabase_key)
