@@ -11,24 +11,20 @@ load_dotenv()
 app = Flask(__name__)
 
 # --- App Configuration ---
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_ANON_KEY")
 app.secret_key = os.environ.get("SECRET_KEY")
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)
 
-# 環境変数が読み込まれているか確認するためのログ
-app.logger.info(f"Attempting to connect to Supabase with URL: {SUPABASE_URL}")
-if SUPABASE_KEY:
-    app.logger.info("Supabase key is loaded.")
-else:
-    app.logger.error("Supabase key is MISSING.")
-
-supabase: Client = create_client(
-    os.environ.get("SUPABASE_URL"),
-    os.environ.get("SUPABASE_ANON_KEY")
-)
+# Supabaseクライアントを生成する関数
+def get_supabase_client():
+    """リクエストごとに新しいSupabaseクライアントを生成する"""
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_ANON_KEY")
+    if not supabase_url or not supabase_key:
+        app.logger.error("SupabaseのURLまたはキーが環境変数に設定されていません。")
+        return None
+    return create_client(supabase_url, supabase_key)
 
 
 def safe_int_convert(value, default=0):
@@ -46,7 +42,7 @@ def escape_search_term(term):
     if not term:
         return ""
     # PostgreSQLのLIKE用特殊文字をエスケープ
-    term = term.replace('%', '\\%').replace('_', '\\_')
+    term = term.replace('%', '\%').replace('_', '\_')
     return f"%{term}%"
 
 
@@ -54,15 +50,11 @@ def escape_search_term(term):
 
 @app.route('/')
 def index():
+    supabase = get_supabase_client()
+    if not supabase:
+        flash("データベース接続に失敗しました。", "error")
+        return render_template('index.html', items=[])
     try:
-        # --- DEBUG LOG ---
-        app.logger.info(f"[Index Route] Request received. Checking Supabase client.")
-        if supabase and hasattr(supabase, 'options') and supabase.options.headers.get('apikey'):
-            app.logger.info(f"[Index Route] Supabase client seems OK. API key starts with: {supabase.options.headers['apikey'][:5]}...")
-        else:
-            app.logger.error(f"[Index Route] Supabase client is invalid or missing API key!")
-        # --- END DEBUG LOG ---
-
         response = supabase.table('parts').select('*').order('created_at', desc=True).limit(100).execute()
         items = response.data or []
     except Exception as e:
@@ -74,6 +66,11 @@ def index():
 
 @app.route('/search', methods=['POST'])
 def search():
+    supabase = get_supabase_client()
+    if not supabase:
+        flash("データベース接続に失敗しました。", "error")
+        return redirect(url_for('index'))
+
     search_term = request.form.get('search_term', '').strip()
     if not search_term:
         flash("検索キーワードを入力してください。", "info")
@@ -124,6 +121,11 @@ def search():
 
 @app.route('/item/<item_id>')
 def item_detail(item_id):
+    supabase = get_supabase_client()
+    if not supabase:
+        flash("データベース接続に失敗しました。", "error")
+        return redirect(url_for('index'))
+
     # IDの妥当性チェック
     if not item_id or not str(item_id).isdigit():
         flash("無効なIDです。", "error")
@@ -157,6 +159,11 @@ def item_detail(item_id):
 
 @app.route('/map')
 def inventory_map():
+    supabase = get_supabase_client()
+    if not supabase:
+        flash("データベース接続に失敗しました。", "error")
+        return render_template('map.html', location_items={}, location_product_numbers={})
+
     location_items = {}
     location_product_numbers = {}
     try:
@@ -183,6 +190,11 @@ def inventory_map():
 
 @app.route('/update', methods=['GET', 'POST'])
 def search_for_update():
+    supabase = get_supabase_client()
+    if not supabase:
+        flash("データベース接続に失敗しました。", "error")
+        return redirect(url_for('search_for_update'))
+
     if request.method == 'POST':
         search_term = request.form.get('search_term', '').strip()
         if not search_term:
@@ -233,6 +245,11 @@ def search_for_update():
 
 @app.route('/update/<order_slip_no>', methods=['GET', 'POST'])
 def update_slip(order_slip_no):
+    supabase = get_supabase_client()
+    if not supabase:
+        flash("データベース接続に失敗しました。", "error")
+        return redirect(url_for('search_for_update'))
+
     if request.method == 'POST':
         try:
             form_data = request.form
@@ -354,6 +371,11 @@ def update_slip(order_slip_no):
 
 @app.route('/move', methods=['GET', 'POST'])
 def search_for_move():
+    supabase = get_supabase_client()
+    if not supabase:
+        flash("データベース接続に失敗しました。", "error")
+        return redirect(url_for('search_for_move'))
+
     if request.method == 'POST':
         search_term = request.form.get('search_term', '').strip()
         if not search_term:
@@ -383,6 +405,11 @@ def search_for_move():
 
 @app.route('/move/<item_id>', methods=['GET', 'POST'])
 def move_item(item_id):
+    supabase = get_supabase_client()
+    if not supabase:
+        flash("データベース接続に失敗しました。", "error")
+        return redirect(url_for('search_for_move'))
+
     if not item_id or not str(item_id).isdigit():
         flash("無効なIDです。", "error")
         return redirect(url_for('search_for_move'))
