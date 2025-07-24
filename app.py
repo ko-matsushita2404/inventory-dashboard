@@ -18,6 +18,13 @@ app.secret_key = os.environ.get("SECRET_KEY")
 # ログ設定
 logging.basicConfig(level=logging.INFO)
 
+# 環境変数が読み込まれているか確認するためのログ
+app.logger.info(f"Attempting to connect to Supabase with URL: {SUPABASE_URL}")
+if SUPABASE_KEY:
+    app.logger.info("Supabase key is loaded.")
+else:
+    app.logger.error("Supabase key is MISSING.")
+
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
@@ -102,6 +109,7 @@ def search():
         app.logger.error(f"検索エラー: {str(e)}")
         flash("検索中にエラーが発生しました。", "error")
         return redirect(url_for('index'))
+
 
 @app.route('/item/<item_id>')
 def item_detail(item_id):
@@ -383,13 +391,15 @@ def move_item(item_id):
 
             current_item = item_resp.data[0]
             previous_quantity = safe_int_convert(current_item.get('remaining_quantity', 0))
-            
+
             # 移動数量が指定されている場合、残数を減らす
             new_quantity = previous_quantity
             if moved_quantity > 0:
                 new_quantity = previous_quantity - moved_quantity
                 if new_quantity < 0:
-                    flash(f"部品 {current_item.get('parts_name', 'Unknown')} の在庫が不足しています (現在: {previous_quantity}, 移動予定: {moved_quantity})", "warning")
+                    flash(
+                        f"部品 {current_item.get('parts_name', 'Unknown')} の在庫が不足しています (現在: {previous_quantity}, 移動予定: {moved_quantity})",
+                        "warning")
                     return redirect(url_for('move_item', item_id=item_id))
 
             # partsテーブルを更新
@@ -421,7 +431,7 @@ def move_item(item_id):
                 'previous_quantity': previous_quantity,
                 'new_quantity': new_quantity,
                 'previous_delivery_date': current_item.get('delivery_date'),
-                'new_delivery_date': current_item.get('delivery_date'), # 移動では変更なし
+                'new_delivery_date': current_item.get('delivery_date'),  # 移動では変更なし
                 'storage_location': new_storage_location,
                 'notes': history_notes,
                 'updated_by': 'web_user_move'
