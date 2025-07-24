@@ -19,10 +19,12 @@ logging.basicConfig(level=logging.INFO)
 # Supabaseクライアントを生成する関数
 def get_supabase_client():
     """リクエストごとに新しいSupabaseクライアントを生成する"""
-    supabase_url = os.environ.get("SUPABASE_URL")
-    supabase_key = os.environ.get("SUPABASE_ANON_KEY")
+    # !!! SECURITY WARNING: DO NOT USE HARDCODED KEYS IN PRODUCTION !!!
+    # This is for debugging purposes only.
+    supabase_url = "https://jyksbivxnxxhdnnhiobn.supabase.co"
+    supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5a3NiaXZ4bnh4aGRubmhpb2JuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI3OTMyNzgsImV4cCI6MjA2ODM2OTI3OH0.vUG92gxV1CyKkzhir9JvYphCnidB8QSjV_QEiSYoQn0"
     if not supabase_url or not supabase_key:
-        app.logger.error("SupabaseのURLまたはキーが環境変数に設定されていません。")
+        app.logger.error("SupabaseのURLまたはキーがハードコードされていません。")
         return None
     return create_client(supabase_url, supabase_key)
 
