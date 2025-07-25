@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from functools import wraps
 import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -12,6 +13,15 @@ app = Flask(__name__)
 
 # --- App Configuration ---
 app.secret_key = os.environ.get("SECRET_KEY")
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_jwt' not in session:
+            flash("ログインが必要です。", "warning")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)
@@ -49,11 +59,30 @@ def escape_search_term(term):
 # === Main Read-Only Routes ===
 
 @app.route('/')
+@login_required
 def index():
     supabase = get_supabase_client()
     if not supabase:
         flash("データベース接続に失敗しました。", "error")
         return render_template('index.html', items=[])
+    try:
+        # storage_locationがNULLでなく、空文字列でもないデータを取得
+        response = supabase.table('parts').select('*').not_.is_('storage_location', 'null').neq('storage_location', '').order('created_at', desc=True).limit(100).execute()
+        items = response.data or []
+    except Exception as e:
+        app.logger.error(f"データ取得エラー: {str(e)}")
+        flash("データの取得中にエラーが発生しました。", "error")
+        items = []
+    return render_template('index.html', items=items, page_title='保管場所登録済み部品')
+
+
+@app.route('/all')
+@login_required
+def all_items():
+    supabase = get_supabase_client()
+    if not supabase:
+        flash("データベース接続に失敗しました。", "error")
+        return render_template('all_items.html', items=[])
     try:
         response = supabase.table('parts').select('*').order('created_at', desc=True).limit(100).execute()
         items = response.data or []
@@ -61,10 +90,11 @@ def index():
         app.logger.error(f"データ取得エラー: {str(e)}")
         flash("データの取得中にエラーが発生しました。", "error")
         items = []
-    return render_template('index.html', items=items)
+    return render_template('all_items.html', items=items, page_title='すべての部品')
 
 
 @app.route('/search', methods=['POST'])
+@login_required
 def search():
     supabase = get_supabase_client()
     if not supabase:
@@ -121,6 +151,7 @@ def search():
 
 
 @app.route('/item/<item_id>')
+@login_required
 def item_detail(item_id):
     supabase = get_supabase_client()
     if not supabase:
@@ -159,6 +190,7 @@ def item_detail(item_id):
 
 
 @app.route('/map')
+@login_required
 def inventory_map():
     supabase = get_supabase_client()
     if not supabase:
@@ -187,17 +219,10 @@ def inventory_map():
     return render_template('map.html', location_items=location_items, location_product_numbers=location_product_numbers)
 
 
-@app.route('/test_search', methods=['POST'])
-def test_search():
-    test_term = request.form.get('test_term', '')
-    app.logger.info(f"[Test Search] Received test_term: {test_term}")
-    flash(f"テストキーワード: {test_term}", "info")
-    return redirect(url_for('index'))
-
-
 # === Data Update (Write) Routes ===
 
 @app.route('/update', methods=['GET', 'POST'])
+@login_required
 def search_for_update():
     supabase = get_supabase_client()
     if not supabase:
@@ -261,6 +286,7 @@ def search_for_update():
 
 
 @app.route('/update/<order_slip_no>', methods=['GET', 'POST'])
+@login_required
 def update_slip(order_slip_no):
     supabase = get_supabase_client()
     if not supabase:
@@ -282,7 +308,7 @@ def update_slip(order_slip_no):
 
                     # 安全な数値変換
                     delivered_qty = safe_int_convert(delivered_qty_str)
-                    if delivered_qty <= 0:
+                    if delivered_qty < 0:
                         continue
 
                     item_id = key.split('_')[-1]
@@ -384,9 +410,34 @@ def update_slip(order_slip_no):
         return redirect(url_for('search_for_update'))
 
 
+@app.route('/delete/<item_id>', methods=['POST'])
+@login_required
+def delete_item(item_id):
+    supabase = get_supabase_client()
+    if not supabase:
+        flash("データベース接続に失敗しました。", "error")
+        return redirect(url_for('index'))
+
+    try:
+        # アイテムを削除
+        response = supabase.table('parts').delete().eq('id', item_id).execute()
+
+        if response.data:
+            flash("アイテムを削除しました。", "success")
+        else:
+            flash("アイテムの削除に失敗しました。", "error")
+
+    except Exception as e:
+        app.logger.error(f"削除エラー: {str(e)}")
+        flash("削除中にエラーが発生しました。", "error")
+
+    return redirect(url_for('index'))
+
+
 # === Data Move Routes ===
 
 @app.route('/move', methods=['GET', 'POST'])
+@login_required
 def search_for_move():
     supabase = get_supabase_client()
     if not supabase:
@@ -421,6 +472,7 @@ def search_for_move():
 
 
 @app.route('/move/<item_id>', methods=['GET', 'POST'])
+@login_required
 def move_item(item_id):
     supabase = get_supabase_client()
     if not supabase:
@@ -518,6 +570,76 @@ def move_item(item_id):
         flash("データ取得中にエラーが発生しました。", "error")
         return redirect(url_for('search_for_move'))
 
+
+
+# === Authentication Routes ===
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        supabase = get_supabase_client()
+
+        if not supabase:
+            flash("データベース接続に失敗しました。", "error")
+            return render_template('register.html')
+
+        try:
+            # Supabaseにユーザーを登録
+            user_response = supabase.auth.sign_up({"email": email, "password": password})
+            
+            if user_response.user:
+                flash("登録が完了しました。メールアドレスを確認してください。", "success")
+                return redirect(url_for('login'))
+            else:
+                flash(f"登録に失敗しました: {user_response.error.message}", "error")
+        except Exception as e:
+            app.logger.error(f"ユーザー登録エラー: {str(e)}")
+            flash("ユーザー登録中にエラーが発生しました。", "error")
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        supabase = get_supabase_client()
+
+        if not supabase:
+            flash("データベース接続に失敗しました。", "error")
+            return render_template('login.html')
+
+        try:
+            # Supabaseでログイン
+            user_response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            
+            if user_response.user:
+                session['user_jwt'] = user_response.session.access_token
+                session['user_email'] = user_response.user.email
+                flash("ログインしました。", "success")
+                return redirect(url_for('index'))
+            else:
+                flash(f"ログインに失敗しました: {user_response.error.message}", "error")
+        except Exception as e:
+            app.logger.error(f"ログインエラー: {str(e)}")
+            flash("ログイン中にエラーが発生しました。", "error")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    # Supabaseクライアントを生成し、セッションを破棄
+    supabase = get_supabase_client()
+    if supabase:
+        try:
+            supabase.auth.sign_out()
+        except Exception as e:
+            app.logger.warning(f"Supabaseログアウトエラー: {str(e)}")
+    
+    session.pop('user_jwt', None)
+    session.pop('user_email', None)
+    flash("ログアウトしました。", "info")
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
