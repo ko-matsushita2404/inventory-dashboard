@@ -87,7 +87,6 @@
                             {% set location_id_right = number|string + letters[1] %}
                             {% set items_left = location_items.get(location_id_left, []) %}
                             {% set items_right = location_items.get(location_id_right, []) %}
-                            <div class="grid-cell-pair">
                                 <div id="{{ location_id_left }}" class="grid-cell {% if items_left %}occupied{% endif %}" {% if items_left %}onclick="window.location.href='{{ url_for('item_detail', item_id=items_left[0].id) }}'"{% endif %}>
                                     <span class="zone-name">{{ location_id_left }}</span>
                                     <span class="product-numbers"></span>
@@ -96,7 +95,6 @@
                                     <span class="zone-name">{{ location_id_right }}</span>
                                     <span class="product-numbers"></span>
                                 </div>
-                            </div>
                         {% endfor %}
                     </div>
                     {% endfor %}
@@ -117,7 +115,6 @@
                             {% set location_id_right = number|string + letters[1] %}
                             {% set items_left = location_items.get(location_id_left, []) %}
                             {% set items_right = location_items.get(location_id_right, []) %}
-                            <div class="grid-cell-pair">
                                 <div id="{{ location_id_left }}" class="grid-cell {% if items_left %}occupied{% endif %}" {% if items_left %}onclick="window.location.href='{{ url_for('item_detail', item_id=items_left[0].id) }}'"{% endif %}>
                                     <span class="zone-name">{{ location_id_left }}</span>
                                     <span class="product-numbers"></span>
@@ -126,7 +123,6 @@
                                     <span class="zone-name">{{ location_id_right }}</span>
                                     <span class="product-numbers"></span>
                                 </div>
-                            </div>
                         {% endfor %}
                     </div>
                     {% endfor %}
