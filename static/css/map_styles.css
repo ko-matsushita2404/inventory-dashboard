@@ -1,15 +1,20 @@
 .inventory-map-container { 
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 2rem;
 }
 .map-section h3 { 
     text-align: center; 
     margin-bottom: 1rem; 
 }
-.grid-cell-pair, .small-area-row-grid{
+.small-area-row-grid{
     display: flex;
     justify-content: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+.large-area-row-grid {
+    display: grid;
     gap: 5px;
     margin-bottom: 5px;
 }
@@ -22,6 +27,15 @@
     cursor: pointer;
     transition: background-color 0.2s;
 }
+
+.large-area-row-grid.north {
+    grid-template-columns: repeat(18, minmax(60px, 1fr));
+}
+
+.large-area-row-grid.south {
+    grid-template-columns: repeat(16, minmax(60px, 1fr));
+}
+
 .grid-cell:hover { background-color: #e9ecef; }
 .grid-cell.occupied { background-color: #d1e7dd; border-color: #0f5132; }
 .zone-name { font-weight: bold; display: block; font-size: 0.9rem; }
@@ -29,4 +43,8 @@
 
 @media (max-width: 768px) {
     .inventory-map-container { grid-template-columns: 1fr; }
+    .large-area-row-grid.north,
+    .large-area-row-grid.south {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    }
 }
