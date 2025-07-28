@@ -322,7 +322,7 @@ def update_slip(order_slip_no):
         return redirect(url_for('search_for_update'))
 
 
-@app.route('/delete/<int:item_id>', methods=['POST'])
+@app.route('/delete/<string:item_id>', methods=['POST'])
 @login_required
 def delete_item(item_id):
     """Deletes an item."""
