@@ -367,7 +367,7 @@ def search_for_move():
     return render_template('move_search.html')
 
 
-@app.route('/move/<int:item_id>', methods=['GET', 'POST'])
+@app.route('/move/<string:item_id>', methods=['GET', 'POST'])
 @login_required
 def move_item(item_id):
     """Page to move a specific item."""
