@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}部品詳細 - {{ item.parts_name or '' }}{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">{{ item.parts_name or '部品詳細' }}</h1>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>基本情報</h3>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">製番</dt>
+                <dd class="col-sm-9">{{ item.production_no or '-' }}</dd>
+
+                <dt class="col-sm-3">部品No</dt>
+                <dd class="col-sm-9">{{ item.parts_no or '-' }}</dd>
+
+                <dt class="col-sm-3">図番</dt>
+                <dd class="col-sm-9">{{ item.drawing_no or '-' }}</dd>
+
+                <dt class="col-sm-3">発注伝票No</dt>
+                <dd class="col-sm-9">{{ item.order_slip_no or '-' }}</dd>
+
+                <dt class="col-sm-3">納期</dt>
+                <dd class="col-sm-9">{{ item.delivery_date or '-' }}</dd>
+
+                <dt class="col-sm-3">納入残数</dt>
+                <dd class="col-sm-9"><strong>{{ item.remaining_quantity }}</strong></dd>
+
+                <dt class="col-sm-3">保管場所</dt>
+                <dd class="col-sm-9">{{ item.storage_location or '未設定' }}</dd>
+            </dl>
+        </div>
+        <div class="card-footer text-muted">
+            最終更新日時: {{ item.updated_at or '-' }}
+        </div>
+    </div>
+
+    {% if related_items %}
+        <div class="related-items mt-5">
+            <h3>同じ発注伝票 ({{ item.order_slip_no }}) の関連部品</h3>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>品名</th>
+                            <th>製番</th>
+                            <th>納入残数</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r_item in related_items %}
+                            <tr>
+                                <td><strong><a href="{{ url_for('item_detail', item_id=r_item.id) }}">{{ r_item.parts_name }}</a></strong></td>
+                                <td>{{ r_item.production_no }}</td>
+                                <td>{{ r_item.remaining_quantity }}</td>
+                                <td><a href="{{ url_for('item_detail', item_id=r_item.id) }}" class="btn btn-sm btn-outline-secondary">詳細</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">&laquo; 一覧に戻る</a>
+        <a href="{{ url_for('move_item', item_id=item.id) }}" class="btn btn-warning">この部品を移動</a>
+    </div>
+{% endblock %}

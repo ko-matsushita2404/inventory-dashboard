@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}検索結果の選択{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">検索結果の選択</h1>
+    <p>「<strong>{{ search_term }}</strong>」の検索結果、複数の発注伝票Noが見つかりました。更新したい発注伝票Noを選択してください。</p>
+
+    <div class="list-group">
+        {% for order_slip_no, items in search_results.items() %}
+            <a href="{{ url_for('update_slip', order_slip_no=order_slip_no) }}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">発注伝票No: {{ order_slip_no }}</h5>
+                    <small>{{ items|length }} 件</small>
+                </div>
+                <p class="mb-1">含まれる品名: {{ items|map(attribute='parts_name')|join(', ') }}</p>
+            </a>
+        {% endfor %}
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('search_for_update') }}" class="btn btn-secondary">&laquo; 検索画面に戻る</a>
+    </div>
+{% endblock %}

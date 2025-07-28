@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title or 'すべての部品' }}{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">{{ page_title or 'すべての部品' }}</h1>
+
+    <!-- Search Form -->
+    <div class="search-form bg-light p-4 rounded-3 mb-4">
+        <form action="{{ url_for('search') }}" method="post" class="row g-3 align-items-center">
+            <div class="col flex-grow-1">
+                <input type="text" name="search_term" class="form-control form-control-lg" placeholder="製番、品名、部品Noなどで検索..." value="{{ search_term or '' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-lg">検索</button>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('all_items') }}" class="btn btn-secondary btn-lg">クリア</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Item List -->
+    {% if items %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>品名</th>
+                        <th>製番</th>
+                        <th>部品No</th>
+                        <th>図番</th>
+                        <th>発注伝票No</th>
+                        <th>納期</th>
+                        <th>納入残数</th>
+                        <th>保管場所</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td><strong><a href="{{ url_for('item_detail', item_id=item.id) }}">{{ item.parts_name or '' }}</a></strong></td>
+                            <td>{{ item.production_no or '' }}</td>
+                            <td>{{ item.parts_no or '' }}</td>
+                            <td>{{ item.drawing_no or '' }}</td>
+                            <td>{{ item.order_slip_no or '' }}</td>
+                            <td>{{ item.delivery_date or '' }}</td>
+                            <td>{{ item.remaining_quantity }}</td>
+                            <td>{{ item.storage_location or '' }}</td>
+                            <td>
+                                <a href="{{ url_for('item_detail', item_id=item.id) }}" class="btn btn-sm btn-outline-primary">詳細</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            現在登録されている部品はありません。
+        </div>
+    {% endif %}
+{% endblock %}

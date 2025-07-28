@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}部品移動 - {{ item.parts_name }}{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">部品移動</h1>
+    <p>部品の新しい保管場所と移動数量を入力してください。</p>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>移動対象部品</h3>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-4">品名</dt>
+                <dd class="col-sm-8">{{ item.parts_name or '-' }}</dd>
+
+                <dt class="col-sm-4">製番</dt>
+                <dd class="col-sm-8">{{ item.production_no or '-' }}</dd>
+
+                <dt class="col-sm-4">現在の保管場所</dt>
+                <dd class="col-sm-8"><strong>{{ item.storage_location or '未設定' }}</strong></dd>
+
+                <dt class="col-sm-4">納入残数</dt>
+                <dd class="col-sm-8"><strong>{{ item.remaining_quantity }}</strong></dd>
+            </dl>
+        </div>
+    </div>
+
+    <form action="{{ url_for('move_item', item_id=item.id) }}" method="post">
+        <div class="mb-3">
+            <label for="new_storage_location" class="form-label">新しい保管場所</label>
+            <input type="text" id="new_storage_location" name="new_storage_location" class="form-control form-control-lg" value="{{ item.storage_location or '' }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="moved_quantity" class="form-label">移動数量</label>
+            <input type="number" id="moved_quantity" name="moved_quantity" class="form-control" value="0" min="0" max="{{ item.remaining_quantity }}">
+            <div class="form-text">数量の一部を移動する場合に入力します。</div>
+        </div>
+        <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">保管場所を更新</button>
+            <a href="{{ url_for('search_for_move') }}" class="btn btn-secondary">キャンセル</a>
+        </div>
+    </form>
+{% endblock %}

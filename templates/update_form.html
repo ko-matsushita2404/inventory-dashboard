@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}データ更新 - {{ order_slip_no }}{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">発注伝票No: {{ order_slip_no }}</h1>
+    <p>各部品について、今回納入された数量と保管場所を入力してください。</p>
+
+    <form action="{{ url_for('update_slip', order_slip_no=order_slip_no) }}" method="post">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>品名 / 部品No</th>
+                        <th>納入残数</th>
+                        <th>今回納入数量</th>
+                        <th>保管場所</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr class="align-middle">
+                        <td>
+                            <strong>{{ item.parts_name }}</strong>
+                            <small class="d-block text-muted">{{ item.parts_no }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary fs-6">{{ item.remaining_quantity }}</span>
+                        </td>
+                        <td>
+                            <input type="number" name="delivered_qty_{{ item.id }}" class="form-control" value="0" min="0">
+                        </td>
+                        <td>
+                            <input type="text" name="storage_location_{{ item.id }}" class="form-control" value="{{ item.storage_location or '' }}">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">一括更新を実行</button>
+            <a href="{{ url_for('search_for_update') }}" class="btn btn-secondary">キャンセル</a>
+        </div>
+    </form>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}倉庫内移動 - 検索結果{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">倉庫内移動 - 検索結果</h1>
+    <p>「<strong>{{ search_term }}</strong>」に一致する部品が見つかりました。移動したい部品を選択してください。</p>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>製番</th>
+                    <th>品名</th>
+                    <th>保管場所</th>
+                    <th>納入残数</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in search_results %}
+                <tr>
+                    <td>{{ item.production_no or '-' }}</td>
+                    <td>{{ item.parts_name or '-' }}</td>
+                    <td>{{ item.storage_location or '未設定' }}</td>
+                    <td>{{ item.remaining_quantity }}</td>
+                    <td>
+                        <a href="{{ url_for('move_item', item_id=item.id) }}" class="btn btn-sm btn-primary">この部品を移動</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('search_for_move') }}" class="btn btn-secondary">&laquo; 検索画面に戻る</a>
+    </div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}在庫マップ{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/map_styles.css') }}">
+{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">在庫マップ</h1>
+
+    <div class="inventory-map-container">
+        <!-- Your map structure here -->
+        <!-- This part remains the same -->
+    </div>
+
+    <script id="location-product-numbers-data" type="application/json">
+        {{ location_product_numbers | tojson | safe }}
+    </script>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

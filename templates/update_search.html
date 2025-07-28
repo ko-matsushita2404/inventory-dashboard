@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}データ更新 - 検索{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">データ更新</h1>
+    <p>更新したい部品の「発注伝票No、製番、品名」などを入力してください。</p>
+
+    <div class="card bg-light">
+        <div class="card-body">
+            <form action="{{ url_for('search_for_update') }}" method="post">
+                <div class="mb-3">
+                    <label for="search_term" class="form-label">検索キーワード</label>
+                    <input type="text" id="search_term" name="search_term" class="form-control form-control-lg" placeholder="発注伝票No、製番、品名などで検索" required>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">検索</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
