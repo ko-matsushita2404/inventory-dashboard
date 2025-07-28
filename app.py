@@ -159,7 +159,7 @@ def search():
     return render_template('index.html', items=items, search_term=search_term, page_title=f"'{search_term}' の検索結果")
 
 
-@app.route('/item/<int:item_id>')
+@app.route('/item/<item_id>')
 @login_required
 def item_detail(item_id):
     """Displays details for a single part."""
@@ -265,7 +265,7 @@ def update_slip(order_slip_no):
                 if delivered_qty > 0:
                     storage_location = form_data.get(f'storage_location_{item_id_str}', '').strip()
                     items_to_update.append({
-                        'id': int(item_id_str),
+                        'id': str(item_id_str),
                         'delivered_qty': delivered_qty,
                         'storage_location': storage_location
                     })
@@ -322,7 +322,7 @@ def update_slip(order_slip_no):
         return redirect(url_for('search_for_update'))
 
 
-@app.route('/delete/<string:item_id>', methods=['POST'])
+@app.route('/delete/<item_id>', methods=['POST'])
 @login_required
 def delete_item(item_id):
     """Deletes an item."""
@@ -367,7 +367,7 @@ def search_for_move():
     return render_template('move_search.html')
 
 
-@app.route('/move/<string:item_id>', methods=['GET', 'POST'])
+@app.route('/move/<item_id>', methods=['GET', 'POST'])
 @login_required
 def move_item(item_id):
     """Page to move a specific item."""
