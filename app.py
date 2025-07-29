@@ -241,7 +241,7 @@ def search_for_update():
             return redirect(url_for('update_slip', order_slip_no=unique_order_slips[0]))
         else:
             # Pass all results for the template to render choices
-            return render_template('update_search_results.html', search_results=search_results, search_term=search_term)
+            return render_template('update_search_results.html', slips=slips, search_term=search_term)
 
     return render_template('update_search.html')
 
