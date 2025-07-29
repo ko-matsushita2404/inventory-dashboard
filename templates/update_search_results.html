@@ -7,7 +7,7 @@
     <p>「<strong>{{ search_term }}</strong>」の検索結果、複数の発注伝票Noが見つかりました。更新したい発注伝票Noを選択してください。</p>
 
     <div class="list-group">
-        {% for order_slip_no, items in search_results.items() %}
+        {% for order_slip_no, items in slips.items() %}
             <a href="{{ url_for('update_slip', order_slip_no=order_slip_no) }}" class="list-group-item list-group-item-action">
                 <div class="d-flex w-100 justify-content-between">
                     <h5 class="mb-1">発注伝票No: {{ order_slip_no }}</h5>
