@@ -14,9 +14,15 @@
     justify-content: center;
     gap: 2rem;
     overflow-x: auto;
+    padding-bottom: 1rem;
 }
 
-.small-area-row-grid {
+/* PC（幅768px以上）では横スクロール無効にして中央寄せ */
+@media screen and (min-width: 768px) {
+    .small-area-container {
+        justify-content: center;
+        overflow-x: visible;
+        .small-area-row-grid {
     display: grid;
     grid-template-columns: repeat(8, 100px);
     gap: 5px;
