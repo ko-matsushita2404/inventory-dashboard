@@ -7,6 +7,11 @@
     <p>各部品について、今回納入された数量と保管場所を入力してください。</p>
 
     <form action="{{ url_for('update_slip', order_slip_no=order_slip_no) }}" method="post">
+        <div class="mb-3">
+            <label for="bulk_storage_location" class="form-label">一括保管場所 (全てに適用する場合)</label>
+            <input type="text" class="form-control" id="bulk_storage_location" name="bulk_storage_location" placeholder="例: A-1-1">
+            <div class="form-text">ここに場所を入力すると、以下の全ての部品の保管場所が上書きされます。</div>
+        </div>
         <div class="table-responsive">
             <table class="table">
                 <thead>
