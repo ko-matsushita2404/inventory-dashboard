@@ -285,31 +285,63 @@ def update_slip(order_slip_no):
         items_to_update = []
         errors = []
 
+        form_data = request.form
+        items_to_update = []
+        errors = []
+
+        # Fetch all current items for this order slip once
+        try:
+            current_items_response = supabase.table('parts').select('*').eq('order_slip_no', order_slip_no).execute()
+            current_items_map = {item['id']: item for item in current_items_response.data}
+        except Exception as e:
+            logging.error(f"Error fetching current items for update (slip: {order_slip_no}): {e}")
+            flash("現在の部品データの取得中にエラーが発生しました。", "error")
+            return redirect(url_for('search_for_update'))
+
+        # Handle bulk storage location update
+        bulk_storage_location = form_data.get('bulk_storage_location', '').strip()
+
         for key, delivered_qty_str in form_data.items():
             if key.startswith('delivered_qty_'):
                 item_id_str = key.replace('delivered_qty_', '')
                 delivered_qty = safe_int_convert(delivered_qty_str.strip(), 0)
-                
-                if delivered_qty > 0:
-                    storage_location = form_data.get(f'storage_location_{item_id_str}', '').strip()
+                storage_location = form_data.get(f'storage_location_{item_id_str}', '').strip()
+
+                current_item = current_items_map.get(item_id_str)
+                if not current_item:
+                    logging.warning(f"Item with ID {item_id_str} not found in current items map.")
+                    continue # Skip if item not found
+
+                original_storage_location = current_item.get('storage_location', '')
+
+                # Condition to include item for update:
+                # 1. delivered_qty is positive
+                # 2. delivered_qty is 0, but storage_location has changed
+                if delivered_qty > 0 or (delivered_qty == 0 and storage_location != original_storage_location):
                     items_to_update.append({
                         'id': str(item_id_str),
                         'delivered_qty': delivered_qty,
-                        'storage_location': storage_location
+                        'storage_location': storage_location,
+                        'current_item': current_item # Pass current_item for logging and quantity check
                     })
-        
+
         if not items_to_update:
-            flash("更新する数量が入力されていません。", "info")
+            flash("更新する数量または保管場所が入力されていません。", "info")
             return redirect(url_for('update_slip', order_slip_no=order_slip_no))
 
         updated_count = 0
         for item_data in items_to_update:
             try:
-                item_resp = supabase.table('parts').select('*').eq('id', item_data['id']).single().execute()
-                current_item = item_resp.data
-                
+                current_item = item_data['current_item'] # Use the pre-fetched current_item
+                delivered_qty = item_data['delivered_qty']
+                storage_location = item_data['storage_location']
+
+                # Apply bulk storage location if provided
+                if bulk_storage_location:
+                    storage_location = bulk_storage_location
+
                 previous_quantity = safe_int_convert(current_item.get('remaining_quantity'), 0)
-                new_quantity = previous_quantity - item_data['delivered_qty']
+                new_quantity = previous_quantity - delivered_qty
 
                 if new_quantity < 0:
                     errors.append(f"部品 '{current_item.get('parts_name')}' の在庫が不足しています。")
@@ -317,7 +349,7 @@ def update_slip(order_slip_no):
 
                 update_payload = {
                     'remaining_quantity': new_quantity,
-                    'storage_location': item_data['storage_location'],
+                    'storage_location': storage_location,
                     'updated_at': datetime.now().isoformat()
                 }
                 update_response = supabase.table('parts').update(update_payload).eq('id', current_item['id']).execute()
@@ -328,7 +360,7 @@ def update_slip(order_slip_no):
                         production_no=current_item.get('production_no'),
                         parts_name=current_item.get('parts_name'),
                         action="更新",
-                        details=f"数量を{previous_quantity}から{new_quantity}に変更、保管場所を「{item_data['storage_location']}」に更新しました。"
+                        details=f"数量を{previous_quantity}から{new_quantity}に変更、保管場所を「{storage_location}」に更新しました。"
                     )
                     updated_count += 1
                 else:
