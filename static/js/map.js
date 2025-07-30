@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Get the modal element and its body
     const locationModal = new bootstrap.Modal(document.getElementById('locationModal'));
     const modalTitle = document.getElementById('locationModalLabel');
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Add click event listener to each cell
-            cell.addEventListener('click', function() {
+            cell.addEventListener('click', function () {
                 const itemsInLocation = locationItems[locationId];
                 if (itemsInLocation && itemsInLocation.length > 0) {
                     // Set the modal title
@@ -35,18 +35,91 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     // Clear previous content and build the new list
                     modalBody.innerHTML = '';
-                    const list = document.createElement('ul');
-                    list.className = 'list-group';
 
+                    // Group items by production_no
+                    const groupedByProduction = {};
                     itemsInLocation.forEach(item => {
-                        const listItem = document.createElement('a');
-                        listItem.href = `/item/${item.id}`;
-                        listItem.className = 'list-group-item list-group-item-action';
-                        listItem.textContent = `製番: ${item.production_no}`;
-                        list.appendChild(listItem);
+                        const prodNo = item.production_no;
+                        if (!groupedByProduction[prodNo]) {
+                            groupedByProduction[prodNo] = {
+                                production_no: prodNo,
+                                items: [],
+                                total_quantity: 0
+                            };
+                        }
+                        groupedByProduction[prodNo].items.push(item);
+                        groupedByProduction[prodNo].total_quantity += item.remaining_quantity || 0;
                     });
 
-                    modalBody.appendChild(list);
+                    // Create the grouped display
+                    const container = document.createElement('div');
+                    container.className = 'production-groups';
+
+                    for (const prodNo in groupedByProduction) {
+                        const group = groupedByProduction[prodNo];
+
+                        // Create production number group header
+                        const groupCard = document.createElement('div');
+                        groupCard.className = 'card mb-3';
+
+                        const cardHeader = document.createElement('div');
+                        cardHeader.className = 'card-header d-flex justify-content-between align-items-center';
+
+                        const headerContent = document.createElement('div');
+                        headerContent.innerHTML = `
+                            <strong>製番: ${prodNo}</strong>
+                            <small class="text-muted ms-2">${group.items.length}件の部品</small>
+                        `;
+
+                        const quantityBadge = document.createElement('span');
+                        quantityBadge.className = 'badge bg-primary';
+                        quantityBadge.textContent = `総数量: ${group.total_quantity}`;
+
+                        cardHeader.appendChild(headerContent);
+                        cardHeader.appendChild(quantityBadge);
+
+                        // Create expandable item list
+                        const cardBody = document.createElement('div');
+                        cardBody.className = 'card-body';
+
+                        const itemList = document.createElement('div');
+                        itemList.className = 'list-group list-group-flush';
+
+                        group.items.forEach(item => {
+                            const listItem = document.createElement('a');
+                            listItem.href = `/item/${item.id}`;
+                            listItem.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+
+                            const itemInfo = document.createElement('div');
+                            itemInfo.innerHTML = `
+                                <div class="fw-bold">${item.parts_name || '名称未設定'}</div>
+                                <small class="text-muted">部品No: ${item.parts_no || '-'}</small>
+                            `;
+
+                            const quantitySpan = document.createElement('span');
+                            quantitySpan.className = 'badge bg-success';
+                            quantitySpan.textContent = `${item.remaining_quantity || 0}`;
+
+                            listItem.appendChild(itemInfo);
+                            listItem.appendChild(quantitySpan);
+                            itemList.appendChild(listItem);
+                        });
+
+                        // Add "View All" link for production number
+                        const viewAllLink = document.createElement('a');
+                        viewAllLink.href = `/production/${prodNo}`;
+                        viewAllLink.className = 'btn btn-outline-primary btn-sm mt-2';
+                        viewAllLink.innerHTML = `<i class="bi bi-list-ul"></i> 製番 ${prodNo} の全詳細を表示`;
+
+                        cardBody.appendChild(itemList);
+                        cardBody.appendChild(viewAllLink);
+
+                        groupCard.appendChild(cardHeader);
+                        groupCard.appendChild(cardBody);
+                        container.appendChild(groupCard);
+                    }
+
+                    modalBody.appendChild(container);
 
                     // Show the modal
                     locationModal.show();
