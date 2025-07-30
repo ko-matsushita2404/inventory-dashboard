@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}製番: {{ production_no }} - 詳細一覧{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>製番: {{ production_no }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('inventory_map') }}">在庫マップ</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ production_no }}</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- 統計情報サマリー -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">発注伝票数</h5>
+                    <h2 class="mb-0">{{ order_slips|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">総部品数</h5>
+                    <h2 class="mb-0">{{ total_parts_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">総在庫数</h5>
+                    <h2 class="mb-0">{{ total_remaining_quantity }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">保管場所数</h5>
+                    <h2 class="mb-0">{{ unique_locations|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 発注伝票別ツリー構造表示 -->
+    <div class="accordion" id="orderSlipAccordion">
+        {% for order_slip_no, parts_list in order_slips.items() %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading{{ loop.index }}">
+                <button class="accordion-button{% if not loop.first %} collapsed{% endif %}" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" 
+                        aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" 
+                        aria-controls="collapse{{ loop.index }}">
+                    <div class="d-flex w-100 justify-content-between align-items-center me-3">
+                        <div>
+                            <strong>発注伝票No: {{ order_slip_no }}</strong>
+                            <small class="text-muted ms-2">{{ parts_list|length }}件の部品</small>
+                        </div>
+                        <div class="d-flex gap-3 text-muted small">
+                            <span>在庫計: {{ parts_list|sum(attribute='remaining_quantity') }}</span>
+                            <span>場所数: {{ parts_list|map(attribute='storage_location')|reject('none')|list|unique|length }}</span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse{{ loop.index }}" class="accordion-collapse collapse{% if loop.first %} show{% endif %}" 
+                 aria-labelledby="heading{{ loop.index }}" data-bs-parent="#orderSlipAccordion">
+                <div class="accordion-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>品名</th>
+                                    <th>部品No</th>
+                                    <th>図番</th>
+                                    <th>納期</th>
+                                    <th>納入残数</th>
+                                    <th>保管場所</th>
+                                    <th>アクション</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for part in parts_list %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('item_detail', item_id=part.id) }}" class="fw-bold text-decoration-none">
+                                            {{ part.parts_name or '-' }}
+                                        </a>
+                                    </td>
+                                    <td><small class="text-muted">{{ part.parts_no or '-' }}</small></td>
+                                    <td><small class="text-muted">{{ part.drawing_no or '-' }}</small></td>
+                                    <td><small class="text-muted">{{ part.delivery_date or '-' }}</small></td>
+                                    <td>
+                                        <span class="badge bg-{% if part.remaining_quantity > 0 %}success{% else %}secondary{% endif %} fs-6">
+                                            {{ part.remaining_quantity }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ part.storage_location or '未設定' }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for('item_detail', item_id=part.id) }}" 
+                                               class="btn btn-outline-primary btn-sm" title="詳細表示">
+                                                <i class="bi bi-eye"></i> 詳細
+                                            </a>
+                                            <a href="{{ url_for('move_item', item_id=part.id) }}" 
+                                               class="btn btn-outline-warning btn-sm" title="移動">
+                                                <i class="bi bi-arrow-right-square"></i> 移動
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- アクション -->
+    <div class="mt-4 d-flex gap-2">
+        <a href="{{ url_for('inventory_map') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> 在庫マップに戻る
+        </a>
+        <a href="{{ url_for('search_for_update', production_no=production_no) }}" class="btn btn-primary">
+            <i class="bi bi-pencil-square"></i> この製番を一括更新
+        </a>
+    </div>
+
+    <!-- 保管場所別サマリー (オプション) -->
+    <div class="mt-5">
+        <h4>保管場所別サマリー</h4>
+        <div class="row">
+            {% for location in unique_locations %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ location or '未設定' }}</h6>
+                        {% set location_parts = order_slips.values()|list|flatten|selectattr('storage_location', 'equalto', location)|list %}
+                        <p class="card-text small">
+                            部品数: {{ location_parts|length }} / 
+                            在庫計: {{ location_parts|sum(attribute='remaining_quantity') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// アコーディオンの状態を記憶
+document.addEventListener('DOMContentLoaded', function() {
+    // LocalStorageは使用不可のため、セッション中のみの状態管理
+    const accordionButtons = document.querySelectorAll('.accordion-button');
+    
+    accordionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // 必要に応じて状態管理の処理を追加
+        });
+    });
+});
+</script>
+{% endblock %}
