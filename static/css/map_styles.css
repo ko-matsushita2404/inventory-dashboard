@@ -13,6 +13,7 @@
     display: flex;
     justify-content: center;
     gap: 2rem;
+    overflow-x: auto;
 }
 
 .small-area-row-grid {
