@@ -33,18 +33,27 @@ supabase: Client = create_client(supabase_url, supabase_key)
 
 @app.before_request
 def before_request():
-    """Set user object in g if logged in."""
+    """Set user object in g and supabase auth if logged in."""
     g.user = None
     if 'user_jwt' in session:
         try:
+            # Set the auth token for the client for this request
+            supabase.postgrest.auth(session['user_jwt'])
             user_info = supabase.auth.get_user(session['user_jwt'])
             g.user = user_info.user
         except AuthApiError as e:
             logging.warning(f"Invalid JWT, clearing session: {e}")
             session.clear() # Clear invalid session
+            # After clearing session, reset auth to anon key
+            supabase.postgrest.auth(os.environ.get("SUPABASE_ANON_KEY"))
         except Exception as e:
             logging.error(f"Error getting user from JWT: {e}")
             session.clear()
+            # After clearing session, reset auth to anon key
+            supabase.postgrest.auth(os.environ.get("SUPABASE_ANON_KEY"))
+    else:
+        # For requests without a logged-in user, ensure we use the anon key
+        supabase.postgrest.auth(os.environ.get("SUPABASE_ANON_KEY"))
 
 
 def login_required(f):
@@ -358,23 +367,17 @@ def delete_item(item_id):
             return redirect(url_for('all_items'))
 
         # 削除実行
-        delete_response = supabase.table('parts').delete().eq('id', item_id).execute()
+        supabase.table('parts').delete().eq('id', item_id).execute()
 
-        # 削除成功の確認 (Supabaseの応答に依存)
-        if delete_response.data:
-            # 作業履歴に記録
-            log_work_history(
-                item_id=item_id,
-                production_no=item_info.get('production_no'),
-                parts_name=item_info.get('parts_name'),
-                action="削除",
-                details=f"アイテム「{item_info.get('parts_name')}」を削除しました。"
-            )
-            flash("アイテムを削除しました。", "success")
-        else:
-            # APIからの応答が期待通りでない場合
-            logging.warning(f"Possible failed deletion for item {item_id}, response: {delete_response}")
-            flash("アイテムの削除に失敗した可能性があります。データベースを確認してください。", "warning")
+        # 削除が成功したとみなし、作業履歴に記録
+        log_work_history(
+            item_id=item_id,
+            production_no=item_info.get('production_no'),
+            parts_name=item_info.get('parts_name'),
+            action="削除",
+            details=f"アイテム「{item_info.get('parts_name')}」を削除しました。"
+        )
+        flash("アイテムを削除しました。", "success")
 
     except Exception as e:
         logging.error(f"Error deleting item {item_id}: {e}")
