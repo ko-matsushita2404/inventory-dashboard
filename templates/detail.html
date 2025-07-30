@@ -3,7 +3,17 @@
 {% block title %}部品詳細 - {{ item.parts_name or '' }}{% endblock %}
 
 {% block content %}
-    <h1 class="mb-4">{{ item.parts_name or '部品詳細' }}</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ item.parts_name or '部品詳細' }}</h1>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('move_item', item_id=item.id) }}" class="btn btn-warning">
+                <i class="bi bi-arrow-right-square"></i> 移動
+            </a>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                <i class="bi bi-trash"></i> 削除
+            </button>
+        </div>
+    </div>
 
     <div class="card mb-4">
         <div class="card-header">
@@ -27,47 +37,134 @@
                 <dd class="col-sm-9">{{ item.delivery_date or '-' }}</dd>
 
                 <dt class="col-sm-3">納入残数</dt>
-                <dd class="col-sm-9"><strong>{{ item.remaining_quantity }}</strong></dd>
+                <dd class="col-sm-9">
+                    <span class="badge bg-{% if item.remaining_quantity > 0 %}success{% else %}secondary{% endif %} fs-5">
+                        {{ item.remaining_quantity }}
+                    </span>
+                </dd>
 
                 <dt class="col-sm-3">保管場所</dt>
-                <dd class="col-sm-9">{{ item.storage_location or '未設定' }}</dd>
+                <dd class="col-sm-9">
+                    <span class="badge bg-info fs-6">{{ item.storage_location or '未設定' }}</span>
+                </dd>
             </dl>
         </div>
         <div class="card-footer text-muted">
-            最終更新日時: {{ item.updated_at or '-' }}
+            <small>最終更新日時: {{ item.updated_at or '-' }}</small>
         </div>
     </div>
 
     {% if related_items %}
         <div class="related-items mt-5">
-            <h3>同じ発注伝票 ({{ item.order_slip_no }}) の関連部品</h3>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>品名</th>
-                            <th>製番</th>
-                            <th>納入残数</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for r_item in related_items %}
-                            <tr>
-                                <td><strong><a href="{{ url_for('item_detail', item_id=r_item.id) }}">{{ r_item.parts_name }}</a></strong></td>
-                                <td>{{ r_item.production_no }}</td>
-                                <td>{{ r_item.remaining_quantity }}</td>
-                                <td><a href="{{ url_for('item_detail', item_id=r_item.id) }}" class="btn btn-sm btn-outline-secondary">詳細</a></td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">同じ発注伝票 ({{ item.order_slip_no }}) の関連部品</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>品名</th>
+                                    <th>製番</th>
+                                    <th>納入残数</th>
+                                    <th>保管場所</th>
+                                    <th>アクション</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r_item in related_items %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('item_detail', item_id=r_item.id) }}" class="fw-bold text-decoration-none">
+                                                {{ r_item.parts_name }}
+                                            </a>
+                                        </td>
+                                        <td>{{ r_item.production_no }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if r_item.remaining_quantity > 0 %}success{% else %}secondary{% endif %}">
+                                                {{ r_item.remaining_quantity }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info small">{{ r_item.storage_location or '未設定' }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{{ url_for('item_detail', item_id=r_item.id) }}" class="btn btn-outline-primary btn-sm">詳細</a>
+                                                <a href="{{ url_for('move_item', item_id=r_item.id) }}" class="btn btn-outline-warning btn-sm">移動</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     {% endif %}
 
     <div class="mt-4">
-        <a href="{{ url_for('index') }}" class="btn btn-primary">&laquo; 一覧に戻る</a>
-        <a href="{{ url_for('move_item', item_id=item.id) }}" class="btn btn-warning">この部品を移動</a>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="bi bi-arrow-left"></i> 一覧に戻る
+        </a>
+        {% if item.production_no %}
+        <a href="{{ url_for('production_details', production_no=item.production_no) }}" class="btn btn-outline-info">
+            <i class="bi bi-list-ul"></i> 製番 {{ item.production_no }} の全部品を表示
+        </a>
+        {% endif %}
     </div>
+
+    <!-- 削除確認モーダル -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel">
+                        <i class="bi bi-exclamation-triangle"></i> 部品の削除確認
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning" role="alert">
+                        <strong>警告:</strong> この操作は元に戻すことができません。
+                    </div>
+                    <p><strong>以下の部品を削除しますか？</strong></p>
+                    <dl class="row">
+                        <dt class="col-sm-4">品名:</dt>
+                        <dd class="col-sm-8">{{ item.parts_name or '-' }}</dd>
+                        <dt class="col-sm-4">製番:</dt>
+                        <dd class="col-sm-8">{{ item.production_no or '-' }}</dd>
+                        <dt class="col-sm-4">部品No:</dt>
+                        <dd class="col-sm-8">{{ item.parts_no or '-' }}</dd>
+                        <dt class="col-sm-4">納入残数:</dt>
+                        <dd class="col-sm-8">{{ item.remaining_quantity }}</dd>
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <form action="{{ url_for('delete_item', item_id=item.id) }}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> 削除実行
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 削除後のリダイレクト処理
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('shown.bs.modal', function () {
+            // モーダルが表示された時の処理（必要に応じて）
+        });
+    }
+});
+</script>
 {% endblock %}
