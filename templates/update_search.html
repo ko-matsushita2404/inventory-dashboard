@@ -5,7 +5,61 @@
 {% block content %}
     <h1 class="mb-4">データ更新</h1>
     <p>更新したい部品の「発注伝票No、製番、品名」などを入力してください。</p>
+{% extends "base.html" %}
 
+{% block title %}データ更新 - 検索{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>データ更新</h1>
+        {% if initial_search_term %}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('inventory_map') }}">在庫マップ</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('production_details', production_no=initial_search_term) }}">製番: {{ initial_search_term }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">データ更新</li>
+            </ol>
+        </nav>
+        {% endif %}
+    </div>
+    
+    <p>更新したい部品の「発注伝票No、製番、品名」などを入力してください。</p>
+
+    <div class="card bg-light">
+        <div class="card-body">
+            <form action="{{ url_for('search_for_update') }}" method="post">
+                <div class="mb-3">
+                    <label for="search_term" class="form-label">検索キーワード</label>
+                    <input type="text" id="search_term" name="search_term" 
+                           class="form-control form-control-lg" 
+                           placeholder="発注伝票No、製番、品名などで検索" 
+                           value="{{ initial_search_term or '' }}" 
+                           required>
+                    {% if initial_search_term %}
+                    <div class="form-text">製番「{{ initial_search_term }}」が自動入力されています。必要に応じて変更してください。</div>
+                    {% endif %}
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">検索</button>
+                    {% if initial_search_term %}
+                    <a href="{{ url_for('production_details', production_no=initial_search_term) }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> 製番詳細に戻る
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if initial_search_term %}
+    <div class="mt-4">
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle"></i>
+            <strong>ヒント:</strong> 製番「{{ initial_search_term }}」の部品を一括更新する場合は、上記の検索を実行してください。
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
     <div class="card bg-light">
         <div class="card-body">
             <form action="{{ url_for('search_for_update') }}" method="post">
