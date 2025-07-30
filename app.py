@@ -219,7 +219,7 @@ def inventory_map():
     location_items = {}
     location_product_numbers = {}
     try:
-        response = supabase.table('parts').select('id, production_no, storage_location').not_.is_('storage_location', 'null').neq('storage_location', '').execute()
+        response = supabase.table('parts').select('id, production_no, storage_location, parts_name, parts_no, remaining_quantity').not_.is_('storage_location', 'null').neq('storage_location', '').execute()
         if response.data:
             for item in response.data:
                 loc = item.get('storage_location')
@@ -242,6 +242,9 @@ def inventory_map():
 @login_required
 def search_for_update():
     """Search page for updating items, handles POST search."""
+    # URLパラメータから製番を取得（mapからの遷移用）
+    production_no_param = request.args.get('production_no', '').strip()
+
     if request.method == 'POST':
         search_term = request.form.get('search_term', '').strip()
         if not search_term:
@@ -271,7 +274,41 @@ def search_for_update():
             # Pass all results for the template to render choices
             return render_template('update_search_results.html', slips=slips, search_term=search_term)
 
-    return render_template('update_search.html')
+    # GET request - 製番パラメータがある場合は自動検索
+    if production_no_param:
+        try:
+            # 製番で直接検索
+            response = supabase.table('parts').select('*').eq('production_no', production_no_param).execute()
+            search_results = response.data or []
+
+            if not search_results:
+                flash(f"製番 '{production_no_param}' の部品が見つかりませんでした。", "info")
+                return render_template('update_search.html', initial_search_term=production_no_param)
+
+            # Group results by order_slip_no
+            slips = {}
+            for item in search_results:
+                slip_no = item.get('order_slip_no')
+                if slip_no:
+                    if slip_no not in slips:
+                        slips[slip_no] = []
+                    slips[slip_no].append(item)
+
+            unique_order_slips = sorted(slips.keys())
+
+            if len(unique_order_slips) == 1:
+                return redirect(url_for('update_slip', order_slip_no=unique_order_slips[0]))
+            else:
+                return render_template('update_search_results.html',
+                                        slips=slips,
+                                        search_term=production_no_param,
+                                        from_production_page=True)
+
+        except Exception as e:
+            logging.error(f"Error searching by production_no {production_no_param}: {e}")
+            flash("検索中にエラーが発生しました。", "error")
+
+        return render_template('update_search.html', initial_search_term=production_no_param)
 
 
 @app.route('/update/<order_slip_no>', methods=['GET', 'POST'])
@@ -397,7 +434,7 @@ def delete_item(item_id):
     """Deletes an item."""
     try:
         # アイテムを削除する前に、関連情報を取得
-        item_response = supabase.table('parts').select('production_no, parts_name').eq('id', item_id).single().execute()
+        item_response = supabase.table('parts').select('production_no, parts_name, order_slip_no').eq('id', item_id).single().execute()
         item_info = item_response.data
         
         if not item_info:
@@ -417,6 +454,18 @@ def delete_item(item_id):
         )
         flash("アイテムを削除しました。", "success")
 
+        # 削除後の戻り先を改善 - 同じ発注伝票の他の部品がある場合は製番詳細へ
+        production_no = item_info.get('production_no')
+        if production_no:
+            # 同じ製番の他の部品が存在するかチェック
+            try:
+                remaining_response = supabase.table('parts').select('id').eq('production_no', production_no).limit(
+                    1).execute()
+                if remaining_response.data:
+                    return redirect(url_for('production_details', production_no=production_no))
+            except Exception:
+                pass
+
     except Exception as e:
         logging.error(f"Error deleting item {item_id}: {e}")
         flash(f"アイテムの削除中にエラーが発生しました: {e}", "error")
@@ -424,6 +473,52 @@ def delete_item(item_id):
     return redirect(url_for('all_items'))
 
 
+@app.route('/production/<production_no>')
+@login_required
+def production_details(production_no):
+    """製番別の詳細表示ページ."""
+    try:
+        # 指定された製番の全部品を取得
+        response = supabase.table('parts').select('*').eq('production_no', production_no).order('order_slip_no',
+                                                                                                desc=False).execute()
+        parts = response.data or []
+
+        if not parts:
+            flash(f"製番 '{production_no}' の部品が見つかりません。", "info")
+            return redirect(url_for('inventory_map'))
+
+        # 発注伝票No別にグループ化
+        order_slips = {}
+        total_parts_count = 0
+        total_remaining_quantity = 0
+        unique_locations = set()
+
+        for part in parts:
+            order_slip_no = part.get('order_slip_no', '未分類')
+            if order_slip_no not in order_slips:
+                order_slips[order_slip_no] = []
+
+            order_slips[order_slip_no].append(part)
+            total_parts_count += 1
+            total_remaining_quantity += part.get('remaining_quantity', 0)
+
+            if part.get('storage_location'):
+                unique_locations.add(part.get('storage_location'))
+
+        # テンプレートに渡すデータ
+        return render_template('production_details.html',
+                               production_no=production_no,
+                               order_slips=order_slips,
+                               total_parts_count=total_parts_count,
+                               total_remaining_quantity=total_remaining_quantity,
+                               unique_locations=sorted(list(unique_locations)))
+
+    except Exception as e:
+        logging.error(f"Error fetching production details for {production_no}: {e}")
+        flash("製番詳細の取得中にエラーが発生しました。", "error")
+        return redirect(url_for('inventory_map'))
+
+'''
 @app.route('/move', methods=['GET', 'POST'])
 @login_required
 def search_for_move():
@@ -454,7 +549,7 @@ def search_for_move():
         return render_template('move_search_results.html', search_results=search_results, search_term=search_term)
 
     return render_template('move_search.html')
-
+'''
 
 @app.route('/move/<item_id>', methods=['GET', 'POST'])
 @login_required
