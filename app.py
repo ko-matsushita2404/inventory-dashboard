@@ -69,7 +69,21 @@ def login_required(f):
 
 # --- Helper Functions ---
 
+def escape_like_term(term: str) -> str:
+    """
+    Escapes special characters for PostgreSQL LIKE/ILIKE queries and adds wildcards for substring matching.
+    The backslash is the escape character in PostgreSQL's standard_conforming_strings.
+    """
+    if not term:
+        return "%%"
+    # Escape backslash, then percent, then underscore.
+    # The order is important.
+    escaped_term = term.replace('\\', '\\\\').replace('%', '\%').replace('_', '\_')
+    return f"%{escaped_term}%"
+
+
 def safe_int_convert(value, default=None):
+
     """
     Safely converts a value to an integer.
     Returns the default value (or None) if conversion fails.
@@ -113,14 +127,6 @@ def search_parts(search_term: str, limit=200):
         f"drawing_no.ilike.{search_query}",
         f"order_slip_no.ilike.{search_query}"
     ])
-
-    try:
-        response = supabase.table('parts').select('*').or_(or_conditions).limit(limit).execute()
-        return response.data or []
-    except Exception as e:
-        logging.error(f"Database search error for term '{search_term}': {e}")
-        flash("検索中にデータベースエラーが発生しました。", "error")
-        return []
 
     try:
         response = supabase.table('parts').select('*').or_(or_conditions).limit(limit).execute()
