@@ -73,15 +73,20 @@ def safe_int_convert(value, default=None):
         return default
 
 
-def escape_like_term(term: str) -> str:
-    """
-    Escapes special characters for PostgreSQL LIKE queries and adds wildcards.
-    """
-    if not term:
-        return "%"
-    # Escape special characters, then add wildcards for a contains search
-    escaped_term = term.replace('\\', '\\\\').replace('%', '\%').replace('_', '\_')
-    return f"%{escaped_term}%"
+def log_work_history(item_id, production_no, parts_name, action, details):
+    """Logs an action to the work_history table."""
+    try:
+        user_email = g.user.email if g.user else "Unknown"
+        supabase.table('work_history').insert({
+            'item_id': item_id,
+            'production_no': production_no,
+            'parts_name': parts_name,
+            'action': action,
+            'details': details,
+            'user_email': user_email
+        }).execute()
+    except Exception as e:
+        logging.error(f"Failed to log work history: {e}")
 
 
 def search_parts(search_term: str, limit=200):
@@ -99,6 +104,14 @@ def search_parts(search_term: str, limit=200):
         f"drawing_no.ilike.{search_query}",
         f"order_slip_no.ilike.{search_query}"
     ])
+
+    try:
+        response = supabase.table('parts').select('*').or_(or_conditions).limit(limit).execute()
+        return response.data or []
+    except Exception as e:
+        logging.error(f"Database search error for term '{search_term}': {e}")
+        flash("検索中にデータベースエラーが発生しました。", "error")
+        return []
 
     try:
         response = supabase.table('parts').select('*').or_(or_conditions).limit(limit).execute()
@@ -292,10 +305,19 @@ def update_slip(order_slip_no):
                     'storage_location': item_data['storage_location'],
                     'updated_at': datetime.now().isoformat()
                 }
-                supabase.table('parts').update(update_payload).eq('id', current_item['id']).execute()
-                
-                # ... (History logging can be improved later)
-                updated_count += 1
+                update_response = supabase.table('parts').update(update_payload).eq('id', current_item['id']).execute()
+
+                if update_response.data:
+                    log_work_history(
+                        item_id=current_item['id'],
+                        production_no=current_item.get('production_no'),
+                        parts_name=current_item.get('parts_name'),
+                        action="更新",
+                        details=f"数量を{previous_quantity}から{new_quantity}に変更、保管場所を「{item_data['storage_location']}」に更新しました。"
+                    )
+                    updated_count += 1
+                else:
+                    errors.append(f"部品 '{current_item.get('parts_name')}' のデータベース更新に失敗しました。")
 
             except Exception as e:
                 logging.error(f"Error updating item {item_data['id']}: {e}")
@@ -327,12 +349,38 @@ def update_slip(order_slip_no):
 def delete_item(item_id):
     """Deletes an item."""
     try:
-        supabase.table('parts').delete().eq('id', item_id).execute()
-        flash("アイテムを削除しました。", "success")
+        # アイテムを削除する前に、関連情報を取得
+        item_response = supabase.table('parts').select('production_no, parts_name').eq('id', item_id).single().execute()
+        item_info = item_response.data
+        
+        if not item_info:
+            flash("削除対象のアイテムが見つかりません。", "error")
+            return redirect(url_for('all_items'))
+
+        # 削除実行
+        delete_response = supabase.table('parts').delete().eq('id', item_id).execute()
+
+        # 削除成功の確認 (Supabaseの応答に依存)
+        if delete_response.data:
+            # 作業履歴に記録
+            log_work_history(
+                item_id=item_id,
+                production_no=item_info.get('production_no'),
+                parts_name=item_info.get('parts_name'),
+                action="削除",
+                details=f"アイテム「{item_info.get('parts_name')}」を削除しました。"
+            )
+            flash("アイテムを削除しました。", "success")
+        else:
+            # APIからの応答が期待通りでない場合
+            logging.warning(f"Possible failed deletion for item {item_id}, response: {delete_response}")
+            flash("アイテムの削除に失敗した可能性があります。データベースを確認してください。", "warning")
+
     except Exception as e:
         logging.error(f"Error deleting item {item_id}: {e}")
-        flash("アイテムの削除中にエラーが発生しました。", "error")
-    return redirect(url_for('index'))
+        flash(f"アイテムの削除中にエラーが発生しました: {e}", "error")
+    
+    return redirect(url_for('all_items'))
 
 
 @app.route('/move', methods=['GET', 'POST'])
@@ -388,12 +436,21 @@ def move_item(item_id):
             return render_template('move_form.html', item=current_item)
 
         try:
-            # ... (Move logic can also be simplified, but keeping for now)
             update_payload = {'storage_location': new_storage_location, 'updated_at': datetime.now().isoformat()}
-            supabase.table('parts').update(update_payload).eq('id', item_id).execute()
-            
-            # ... (History logging)
-            flash("部品の保管場所を正常に更新しました。", "success")
+            update_response = supabase.table('parts').update(update_payload).eq('id', item_id).execute()
+
+            if update_response.data:
+                log_work_history(
+                    item_id=item_id,
+                    production_no=current_item.get('production_no'),
+                    parts_name=current_item.get('parts_name'),
+                    action="移動",
+                    details=f"保管場所を「{current_item.get('storage_location')}」から「{new_storage_location}」に移動しました。数量: {moved_quantity}"
+                )
+                flash("部品の保管場所を正常に更新しました。", "success")
+            else:
+                flash("データベースの更新に失敗した可能性があります。", "warning")
+
             return redirect(url_for('item_detail', item_id=item_id))
 
         except Exception as e:
