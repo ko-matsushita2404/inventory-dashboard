@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}部品の手動登録{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">部品の手動登録</h1>
+<p>データベースに存在しない新しい部品を登録します。</p>
+
+<div class="card">
+    <div class="card-body">
+        <form action="{{ url_for('add_item') }}" method="post">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="production_no" class="form-label">製番</label>
+                    <input type="text" class="form-control" id="production_no" name="production_no" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="parts_name" class="form-label">品名</label>
+                    <input type="text" class="form-control" id="parts_name" name="parts_name" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="parts_no" class="form-label">部品番号</label>
+                    <input type="text" class="form-control" id="parts_no" name="parts_no">
+                </div>
+                <div class="col-md-6">
+                    <label for="drawing_no" class="form-label">図番</label>
+                    <input type="text" class="form-control" id="drawing_no" name="drawing_no">
+                </div>
+                <div class="col-md-6">
+                    <label for="order_slip_no" class="form-label">発注伝票No</label>
+                    <input type="text" class="form-control" id="order_slip_no" name="order_slip_no">
+                </div>
+                <div class="col-md-6">
+                    <label for="remaining_quantity" class="form-label">数量</label>
+                    <input type="number" class="form-control" id="remaining_quantity" name="remaining_quantity" value="0" required>
+                </div>
+                <div class="col-md-12">
+                    <label for="storage_location" class="form-label">保管場所</label>
+                    <input type="text" class="form-control" id="storage_location" name="storage_location" placeholder="例: A-1-1">
+                </div>
+                 <div class="col-md-12">
+                    <label for="remarks" class="form-label">備考</label>
+                    <textarea class="form-control" id="remarks" name="remarks" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">登録する</button>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">キャンセル</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
