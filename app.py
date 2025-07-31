@@ -186,6 +186,7 @@ def add_item():
     """Page to manually add a new item."""
     if request.method == 'POST':
         try:
+            delivery_date_str = request.form.get('delivery_date', '').strip()
             new_part = {
                 'production_no': request.form.get('production_no', '').strip(),
                 'parts_name': request.form.get('parts_name', '').strip(),
@@ -194,7 +195,7 @@ def add_item():
                 'dimensions': request.form.get('dimensions', '').strip(),
                 'order_slip_no': request.form.get('order_slip_no', '').strip(),
                 'remaining_quantity': safe_int_convert(request.form.get('remaining_quantity'), 0),
-                'delivery_date': request.form.get('delivery_date', '').strip(),
+                'delivery_date': delivery_date_str if delivery_date_str else None,
                 'storage_location': request.form.get('storage_location', '').strip(),
                 'updated_at': datetime.now().isoformat()
             }
@@ -220,7 +221,7 @@ def add_item():
             )
 
             flash(f"部品「{inserted_item['parts_name']}」を正常に登録しました。", "success")
-            return redirect(url_for('item_detail', item_id=inserted_item['id']))
+            return redirect(url_for('add_item'))
 
         except Exception as e:
             logging.error(f"Error adding new item: {e}", exc_info=True)
@@ -505,7 +506,7 @@ def update_slip(order_slip_no):
         for error in errors:
             flash(error, "danger")
 
-        return redirect(url_for('update_slip', order_slip_no=order_slip_no))
+        return redirect(url_for('search_for_update'))
 
     # GET request
     try:
@@ -702,7 +703,7 @@ def move_item(item_id):
                 logging.warning(f"Database update failed for move on item {item_id}. Response: {update_response}")
                 flash("データベースの更新に失敗した可能性があります。", "warning")
 
-            return redirect(url_for('item_detail', item_id=item_id))
+            return redirect(url_for('move_item', item_id=item_id))
 
         except Exception as e:
             logging.error(f"Error moving item {item_id}: {e}", exc_info=True)
@@ -752,7 +753,7 @@ def move_production_from_location(location_name, production_no):
             else:
                 flash("データベースの更新に失敗しました。", "danger")
 
-            return redirect(url_for('inventory_map'))
+            return redirect(url_for('move_production_from_location', location_name=location_name, production_no=production_no))
 
         except Exception as e:
             logging.error(f"Error during bulk move: {e}", exc_info=True)
