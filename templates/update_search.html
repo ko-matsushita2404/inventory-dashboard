@@ -3,13 +3,6 @@
 {% block title %}データ更新 - 検索{% endblock %}
 
 {% block content %}
-    <h1 class="mb-4">データ更新</h1>
-    <p>更新したい部品の「発注伝票No、製番、品名」などを入力してください。</p>
-{% extends "base.html" %}
-
-{% block title %}データ更新 - 検索{% endblock %}
-
-{% block content %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>データ更新</h1>
         {% if initial_search_term %}
@@ -33,7 +26,7 @@
                     <input type="text" id="search_term" name="search_term" 
                            class="form-control form-control-lg" 
                            placeholder="発注伝票No、製番、品名などで検索" 
-                           value="{{ initial_search_term or '' }}" 
+                           value="{{ initial_search_term if initial_search_term is not none else '' }}" 
                            required>
                     {% if initial_search_term %}
                     <div class="form-text">製番「{{ initial_search_term }}」が自動入力されています。必要に応じて変更してください。</div>
@@ -60,18 +53,3 @@
     </div>
     {% endif %}
 {% endblock %}
-    <div class="card bg-light">
-        <div class="card-body">
-            <form action="{{ url_for('search_for_update') }}" method="post">
-                <div class="mb-3">
-                    <label for="search_term" class="form-label">検索キーワード</label>
-                    <input type="text" id="search_term" name="search_term" class="form-control form-control-lg" placeholder="発注伝票No、製番、品名などで検索" required>
-                </div>
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-lg">検索</button>
-                </div>
-            </form>
-        </div>
-    </div>
-{% endblock %}
-
