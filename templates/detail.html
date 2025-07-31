@@ -22,7 +22,14 @@
         <div class="card-body">
             <dl class="row">
                 <dt class="col-sm-3">製番</dt>
-                <dd class="col-sm-9">{{ item.production_no or '-' }}</dd>
+                <dd class="col-sm-9">
+                    {{ item.production_no or '-' }}
+                    {% if item.production_no %}
+                        <a href="{{ url_for('production_details', production_no=item.production_no) }}" class="btn btn-outline-secondary btn-sm ms-2">
+                            <i class="bi bi-card-list"></i> この製番の詳細へ
+                        </a>
+                    {% endif %}
+                </dd>
 
                 <dt class="col-sm-3">部品No</dt>
                 <dd class="col-sm-9">{{ item.parts_no or '-' }}</dd>
