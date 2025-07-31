@@ -40,6 +40,11 @@
                             <i class="bi bi-pencil-square"></i> データ更新
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'add_item' %}active{% endif %}" href="{{ url_for('add_item') }}">
+                            <i class="bi bi-plus-circle"></i> 手動登録
+                        </a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav">
                     {% if g.user %}
