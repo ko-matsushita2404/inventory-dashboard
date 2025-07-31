@@ -226,7 +226,7 @@ def add_item():
 
         except APIError as e:
             if e.code == '23505': # Unique violation
-                flash("同じ製番と部品番号の組み合わせは既に登録されています。", "danger")
+                flash("同じ製番、部品番号、発注伝票No、寸法、図番、品名の組み合わせは既に登録されています。", "danger")
             else:
                 flash(f"データベースエラーが発生しました: {e.message}", "danger")
             return render_template('add_item.html', item=request.form)
