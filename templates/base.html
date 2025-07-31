@@ -26,6 +26,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'inventory' %}active{% endif %}" href="{{ url_for('inventory') }}">
+                            <i class="bi bi-table"></i> 在庫情報
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'all_items' %}active{% endif %}" href="{{ url_for('all_items') }}">
                             <i class="bi bi-list-ul"></i> 全件表示
                         </a>
@@ -37,7 +42,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint in ['search_for_update', 'update_slip'] %}active{% endif %}" href="{{ url_for('search_for_update') }}">
-                            <i class="bi bi-pencil-square"></i> データ更新
+                            <i class="bi bi-pencil-square"></i> 納入登録
                         </a>
                     </li>
                     <li class="nav-item">
