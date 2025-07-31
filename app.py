@@ -706,6 +706,55 @@ def move_item(item_id):
     return render_template('move_form.html', item=current_item)
 
 
+@app.route('/move/location/<location_name>/production/<production_no>', methods=['GET', 'POST'])
+@login_required
+def move_production_from_location(location_name, production_no):
+    """Page to move all parts of a production number from a specific location."""
+    if request.method == 'POST':
+        new_storage_location = request.form.get('new_storage_location', '').strip()
+        if not new_storage_location:
+            flash("新しい保管場所を入力してください。", "warning")
+            return render_template('move_production.html', location_name=location_name, production_no=production_no)
+
+        try:
+            # Find all parts matching the criteria
+            response = supabase.table('parts').select('id, parts_name').eq('production_no', production_no).eq('storage_location', location_name).execute()
+            items_to_move = response.data or []
+
+            if not items_to_move:
+                flash("移動対象の部品が見つかりませんでした。", "warning")
+                return redirect(url_for('inventory_map'))
+
+            # Update all found items
+            update_payload = {'storage_location': new_storage_location, 'updated_at': datetime.now().isoformat()}
+            
+            # Update in a batch if possible, otherwise loop
+            item_ids = [item['id'] for item in items_to_move]
+            update_response = supabase.table('parts').update(update_payload).in_('id', item_ids).execute()
+
+            if update_response.data:
+                # Log each move for history
+                for item in items_to_move:
+                    log_work_history(
+                        item_id=item['id'],
+                        production_no=production_no,
+                        parts_name=item['parts_name'],
+                        action="一括移動",
+                        details=f"製番 '{production_no}' の一括移動により、保管場所が '{location_name}' から '{new_storage_location}' に変更されました。"
+                    )
+                flash(f"製番 '{production_no}' の部品 {len(items_to_move)} 点を '{new_storage_location}' へ移動しました。", "success")
+            else:
+                flash("データベースの更新に失敗しました。", "danger")
+
+            return redirect(url_for('inventory_map'))
+
+        except Exception as e:
+            logging.error(f"Error during bulk move: {e}", exc_info=True)
+            flash("一括移動中にエラーが発生しました。", "danger")
+
+    return render_template('move_production.html', location_name=location_name, production_no=production_no)
+
+
 # --- Authentication Routes ---
 
 @app.route('/login', methods=['GET', 'POST'])
