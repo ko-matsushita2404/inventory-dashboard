@@ -1,68 +1,53 @@
 {% extends "base.html" %}
 
-{% block title %}{{ page_title or '部品在庫管理システム' }}{% endblock %}
+{% block title %}ようこそ！在庫管理システムへ{% endblock %}
 
 {% block content %}
-    <h1 class="mb-4">{{ page_title or '保管場所登録済み部品' }}</h1>
-
-    <!-- Search Form -->
-    <div class="search-form bg-light p-4 rounded-3 mb-4">
-        <form action="{{ url_for('search') }}" method="post" class="row g-3 align-items-center">
-            <div class="col flex-grow-1">
-                <input type="text" name="search_term" class="form-control form-control-lg" placeholder="製番、品名、部品Noなどで検索..." value="{{ search_term or '' }}">
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary btn-lg">検索</button>
-            </div>
-            <div class="col-auto">
-                <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg">クリア</a>
-            </div>
-        </form>
+<div class="container">
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+            <h1 class="display-5 fw-bold"><i class="bi bi-boxes"></i> 部品在庫管理システムへようこそ</h1>
+            <p class="col-md-8 fs-4">このシステムは、工場内の部品在庫を効率的に管理するために設計されました。主な機能と使い方を以下に紹介します。</p>
+        </div>
     </div>
 
-    <!-- Item List -->
-    {% if items %}
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>品名</th>
-                        <th>製番</th>
-                        <th>部品No</th>
-                        <th>図番</th>
-                        <th>発注伝票No</th>
-                        <th>納期</th>
-                        <th>納入残数</th>
-                        <th>保管場所</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in items %}
-                        <tr>
-                            <td><strong><a href="{{ url_for('item_detail', item_id=item.id) }}">{{ item.parts_name or '' }}</a></strong></td>
-                            <td>{{ item.production_no or '' }}</td>
-                            <td>{{ item.parts_no or '' }}</td>
-                            <td>{{ item.drawing_no or '' }}</td>
-                            <td>{{ item.order_slip_no or '' }}</td>
-                            <td>{{ item.delivery_date or '' }}</td>
-                            <td>{{ item.remaining_quantity }}</td>
-                            <td>{{ item.storage_location or '' }}</td>
-                            <td>
-                                <a href="{{ url_for('item_detail', item_id=item.id) }}" class="btn btn-sm btn-outline-primary">詳細</a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h4 class="card-title"><i class="bi bi-search"></i> 部品を検索する</h4>
+                    <p class="card-text">「在庫情報」ページや各一覧ページの上部にある検索バーから、製番、品名、部品番号などで必要な部品をすばやく見つけることができます。</p>
+                    <a href="{{ url_for('inventory') }}" class="btn btn-primary">在庫情報ページで試す <i class="bi bi-arrow-right"></i></a>
+                </div>
+            </div>
         </div>
-    {% else %}
-        <div class="alert alert-info" role="alert">
-            {% if search_term %}
-                「{{ search_term }}」に一致する部品は見つかりませんでした。
-            {% else %}
-                現在登録されている部品はありません。
-            {% endif %}
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h4 class="card-title"><i class="bi bi-geo-alt-fill"></i> 在庫マップで場所を確認</h4>
+                    <p class="card-text">「在庫マップ」では、保管場所ごとの在庫状況を視覚的に確認できます。場所をクリックすると、そこにある製番リストが表示され、部品の詳細確認や一括移動が可能です。</p>
+                    <a href="{{ url_for('inventory_map') }}" class="btn btn-success">在庫マップを見る <i class="bi bi-arrow-right"></i></a>
+                </div>
+            </div>
         </div>
-    {% endif %}
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h4 class="card-title"><i class="bi bi-pencil-square"></i> 納入を登録する</h4>
+                    <p class="card-text">部品が納入されたら、「納入登録」ページで数量や保管場所を更新します。製番や発注伝票Noで検索し、対象の部品情報を正確に更新してください。</p>
+                    <a href="{{ url_for('search_for_update') }}" class="btn btn-info">納入登録ページへ <i class="bi bi-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h4 class="card-title"><i class="bi bi-plus-circle-fill"></i> 手動で部品を登録</h4>
+                    <p class="card-text">システムに未登録の部品は、「手動登録」ページから直接データベースに追加できます。現物とデータの差異をなくすためにご活用ください。</p>
+                    <a href="{{ url_for('add_item') }}" class="btn btn-secondary">手動登録ページへ <i class="bi bi-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
