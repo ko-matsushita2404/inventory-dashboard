@@ -108,17 +108,15 @@ def safe_int_convert(value, default=None):
 def log_work_history(item_id, production_no, parts_name, action, details):
     """Logs an action to the work_history table."""
     try:
-        user_email = g.user.email if g.user else "Unknown"
-        supabase.table('work_history').insert({
+        supabase.table('parts').insert({
             'item_id': item_id,
             'production_no': production_no,
             'parts_name': parts_name,
             'action': action,
             'details': details,
-            'user_email': user_email
         }).execute()
     except Exception as e:
-        logging.error(f"Failed to log work history: {e}")
+        logging.error(f"Failed to log parts: {e}")
 
 
 def search_parts(search_term: str, limit=200):
@@ -193,10 +191,11 @@ def add_item():
                 'parts_name': request.form.get('parts_name', '').strip(),
                 'parts_no': request.form.get('parts_no', '').strip(),
                 'drawing_no': request.form.get('drawing_no', '').strip(),
+                'dimensions': request.form.get('dimensions', '').strip(),
                 'order_slip_no': request.form.get('order_slip_no', '').strip(),
                 'remaining_quantity': safe_int_convert(request.form.get('remaining_quantity'), 0),
+                'delivery_date': request.form.get('delivery_date', '').strip(),
                 'storage_location': request.form.get('storage_location', '').strip(),
-                'remarks': request.form.get('remarks', '').strip(),
                 'updated_at': datetime.now().isoformat()
             }
 
