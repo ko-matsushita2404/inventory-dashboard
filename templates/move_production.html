@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}製番の一括移動{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-arrows-move"></i> 製番の一括移動</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('inventory_map') }}">在庫マップ</a></li>
+                <li class="breadcrumb-item active" aria-current="page">一括移動</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card bg-light mb-4">
+        <div class="card-body">
+            <h5 class="card-title">移動対象</h5>
+            <p><strong>保管場所:</strong> <span class="badge bg-info fs-6">{{ location_name }}</span></p>
+            <p><strong>製番:</strong> <span class="badge bg-primary fs-6">{{ production_no }}</span></p>
+            <p class="text-muted small">上記保管場所にある、この製番の部品すべてが移動対象です。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form action="{{ url_for('move_production_from_location', location_name=location_name, production_no=production_no) }}" method="post">
+                <div class="mb-3">
+                    <label for="new_storage_location" class="form-label"><strong>新しい保管場所</strong></label>
+                    <input type="text" id="new_storage_location" name="new_storage_location" class="form-control form-control-lg" placeholder="例: B-2-3" required>
+                    <div class="form-text">移動先の保管場所名を入力してください。</div>
+                </div>
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-warning btn-lg">
+                        <i class="bi bi-arrows-move"></i> 移動を実行する
+                    </button>
+                    <a href="{{ url_for('inventory_map') }}" class="btn btn-secondary">キャンセルしてマップに戻る</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
