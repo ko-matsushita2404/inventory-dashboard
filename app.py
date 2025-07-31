@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, flash, session, g
 from supabase import create_client, Client
 from gotrue.errors import AuthApiError
+from postgrest.exceptions import APIError
 import itertools
 
 # --- Initialization ---
@@ -223,6 +224,12 @@ def add_item():
             flash(f"部品「{inserted_item['parts_name']}」を正常に登録しました。", "success")
             return redirect(url_for('add_item'))
 
+        except APIError as e:
+            if e.code == '23505': # Unique violation
+                flash("同じ製番と部品番号の組み合わせは既に登録されています。", "danger")
+            else:
+                flash(f"データベースエラーが発生しました: {e.message}", "danger")
+            return render_template('add_item.html', item=request.form)
         except Exception as e:
             logging.error(f"Error adding new item: {e}", exc_info=True)
             flash("部品の登録中に予期せぬエラーが発生しました。", "danger")
