@@ -71,11 +71,22 @@ document.addEventListener('DOMContentLoaded', function () {
                             <small class="text-muted ms-2">${group.items.length}件の部品</small>
                         `;
 
+                        const buttonGroup = document.createElement('div');
+                        buttonGroup.className = 'btn-group';
+
+                        const moveButton = document.createElement('a');
+                        moveButton.href = `/move/location/${locationId}/production/${prodNo}`;
+                        moveButton.className = 'btn btn-warning btn-sm';
+                        moveButton.innerHTML = '<i class="bi bi-arrows-move"></i> この製番をまとめて移動';
+
                         const quantityBadge = document.createElement('span');
                         quantityBadge.className = 'badge bg-primary';
                         quantityBadge.textContent = `総数量: ${group.total_quantity}`;
 
+                        buttonGroup.appendChild(moveButton);
+
                         cardHeader.appendChild(headerContent);
+                        cardHeader.appendChild(buttonGroup);
                         cardHeader.appendChild(quantityBadge);
 
                         // Create expandable item list
