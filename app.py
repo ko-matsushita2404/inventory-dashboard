@@ -150,15 +150,22 @@ def search_parts(search_term: str, limit=200):
 @app.route('/')
 @login_required
 def index():
+    """Renders the new home page with usage instructions."""
+    return render_template('index.html')
+
+
+@app.route('/inventory')
+@login_required
+def inventory():
     """Main page showing parts with a storage location."""
     try:
         response = supabase.table('parts').select('*').not_.is_('storage_location', 'null').neq('storage_location', '').order('created_at', desc=True).limit(100).execute()
         items = response.data or []
     except Exception as e:
-        logging.error(f"Error fetching parts for index: {e}")
+        logging.error(f"Error fetching parts for inventory page: {e}")
         flash("部品データの取得中にエラーが発生しました。", "error")
         items = []
-    return render_template('index.html', items=items, page_title='保管場所登録済み部品')
+    return render_template('inventory.html', items=items, page_title='保管場所登録済み部品')
 
 
 @app.route('/all')
@@ -232,17 +239,17 @@ def search():
     
     if not search_term:
         flash("検索キーワードを入力してください。", "info")
-        return redirect(url_for('index'))
+        return redirect(url_for('inventory'))
 
     items = search_parts(search_term)
     
     if not items:
         flash(f"キーワード '{search_term}' に一致する部品は見つかりませんでした。", "info")
-        # Redirect to index but keep the search term in the query for user context
-        return redirect(url_for('index', search_term=search_term))
+        # Redirect to inventory but keep the search term in the query for user context
+        return redirect(url_for('inventory', search_term=search_term))
 
-    # Always show results on the index page template for consistency
-    return render_template('index.html', items=items, search_term=search_term, page_title=f"'{search_term}' の検索結果")
+    # Always show results on the inventory page template for consistency
+    return render_template('inventory.html', items=items, search_term=search_term, page_title=f"'{search_term}' の検索結果")
 
 
 @app.route('/item/<item_id>')
@@ -255,7 +262,7 @@ def item_detail(item_id):
         item = item_response.data
         if not item:
             flash("指定された部品が見つかりません。", "error")
-            return redirect(url_for('index'))
+            return redirect(url_for('inventory'))
 
         related_items = []
         order_slip_no = item.get('order_slip_no')
@@ -268,7 +275,7 @@ def item_detail(item_id):
     except Exception as e:
         logging.error(f"Error fetching details for item {item_id}: {e}", exc_info=True)
         flash("部品詳細の取得中にエラーが発生しました。", "error")
-        return redirect(url_for('index'))
+        return redirect(url_for('inventory'))
 
     return render_template('detail.html', item=item, related_items=related_items)
 
@@ -499,7 +506,7 @@ def update_slip(order_slip_no):
         for error in errors:
             flash(error, "danger")
 
-        return redirect(url_for('index'))
+        return redirect(url_for('update_slip', order_slip_no=order_slip_no))
 
     # GET request
     try:
