@@ -1,17 +1,60 @@
-<div class="map-section">
-    <h3>北エリア</h3>
-    <div class="large-area-wrapper">
-        {% set north_numbers = [2, 3, 4, 5, 6, 7, 8, 9, 10] %}
-        {% set letters = ['E', 'F', 'C', 'D', 'A', 'B'] %}
-        {% for num in north_numbers %}
-        <div class="shelf-block">
-            {% for letter in letters %}
-            <div class="grid-cell" id="{{ num }}{{ letter }}">
-                <span class="zone-name">{{ num }}{{ letter }}</span>
-                <span class="product-numbers"></span>
+{% extends "base.html" %}
+
+{% block title %}北エリアマップ{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/map_styles.css') }}">
+{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">北エリアマップ</h1>
+
+    <div class="inventory-map-container">
+        <div class="map-section">
+            <h3>北エリア</h3>
+            <div class="large-area-wrapper">
+                {% set north_numbers = [2, 3, 4, 5, 6, 7, 8, 9, 10] %}
+                {% set letters = ['E', 'F', 'C', 'D', 'A', 'B'] %}
+                {% for num in north_numbers %}
+                <div class="shelf-block">
+                    {% for letter in letters %}
+                    <div class="grid-cell" id="{{ num }}{{ letter }}">
+                        <span class="zone-name">{{ num }}{{ letter }}</span>
+                        <span class="product-numbers"></span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
-        {% endfor %}
     </div>
-</div>
+
+    <script id="location-items-data" type="application/json">
+        {{ location_items | tojson | safe }}
+    </script>
+    <script id="location-product-numbers-data" type="application/json">
+        {{ location_product_numbers | tojson | safe }}
+    </script>
+
+    <!-- Modal -->
+    <div class="modal fade" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="locationModalLabel">保管場所の詳細</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="locationModalBody">
+                    <!-- Item details will be injected here by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

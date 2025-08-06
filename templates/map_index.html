@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}在庫マップ選択{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">在庫マップ</h1>
+    <p class="lead">表示したいエリアを選択してください。</p>
+
+    <div class="list-group">
+        <a href="{{ url_for('inventory_map_small_area') }}" class="list-group-item list-group-item-action">
+            <i class="bi bi-map me-2"></i> 小エリア
+        </a>
+        <a href="{{ url_for('inventory_map_north_area') }}" class="list-group-item list-group-item-action">
+            <i class="bi bi-map me-2"></i> 北エリア
+        </a>
+        <a href="{{ url_for('inventory_map_south_area') }}" class="list-group-item list-group-item-action">
+            <i class="bi bi-map me-2"></i> 南エリア
+        </a>
+    </div>
+{% endblock %}
