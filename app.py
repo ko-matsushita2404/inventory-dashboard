@@ -289,6 +289,127 @@ def item_detail(item_id):
 
 @app.route('/map')
 @login_required
+def inventory_map_index():
+    """Displays the inventory map index page with links to specific areas."""
+    return render_template('map_index.html')
+
+
+@app.route('/map/small_area')
+@login_required
+def inventory_map_small_area():
+    """Displays the small area inventory map."""
+    location_items = {}
+    location_product_numbers = {}
+    small_area_items = {}
+
+    try:
+        response = supabase.table('parts').select('id, production_no, storage_location, parts_name, parts_no').not_.is_('storage_location', 'null').neq('storage_location', '').execute()
+        if response.data:
+            for item in response.data:
+                loc = item.get('storage_location')
+                if not loc: continue
+
+                if loc.startswith('39') or loc.startswith('40'):
+                    if loc not in small_area_items:
+                        small_area_items[loc] = []
+                    small_area_items[loc].append(item)
+
+                if loc not in location_items:
+                    location_items[loc] = []
+                location_items[loc].append(item)
+
+            for loc, items in location_items.items():
+                prod_nos = {item.get('production_no') for item in items if item.get('production_no')}
+                location_product_numbers[loc] = sorted(list(prod_nos))
+
+    except Exception as e:
+        logging.error(f"Error fetching data for small area map: {e}")
+        flash("マップデータの取得中にエラーが発生しました。", "error")
+
+    return render_template('map_small_area.html', 
+                           location_items=location_items, 
+                           location_product_numbers=location_product_numbers,
+                           small_area_items=small_area_items)
+
+
+@app.route('/map/north_area')
+@login_required
+def inventory_map_north_area():
+    """Displays the north area inventory map."""
+    location_items = {}
+    location_product_numbers = {}
+    north_area_items = {}
+
+    try:
+        response = supabase.table('parts').select('id, production_no, storage_location, parts_name, parts_no').not_.is_('storage_location', 'null').neq('storage_location', '').execute()
+        if response.data:
+            for item in response.data:
+                loc = item.get('storage_location')
+                if not loc: continue
+
+                if any(loc.startswith(str(n)) for n in range(2, 11)):
+                    if loc not in north_area_items:
+                        north_area_items[loc] = []
+                    north_area_items[loc].append(item)
+
+                if loc not in location_items:
+                    location_items[loc] = []
+                location_items[loc].append(item)
+
+            for loc, items in location_items.items():
+                prod_nos = {item.get('production_no') for item in items if item.get('production_no')}
+                location_product_numbers[loc] = sorted(list(prod_nos))
+
+    except Exception as e:
+        logging.error(f"Error fetching data for north area map: {e}")
+        flash("マップデータの取得中にエラーが発生しました。", "error")
+
+    return render_template('map_north_area.html', 
+                           location_items=location_items, 
+                           location_product_numbers=location_product_numbers,
+                           north_area_items=north_area_items)
+
+
+@app.route('/map/south_area')
+@login_required
+def inventory_map_south_area():
+    """Displays the south area inventory map."""
+    location_items = {}
+    location_product_numbers = {}
+    south_area_items = {}
+
+    try:
+        response = supabase.table('parts').select('id, production_no, storage_location, parts_name, parts_no').not_.is_('storage_location', 'null').neq('storage_location', '').execute()
+        if response.data:
+            for item in response.data:
+                loc = item.get('storage_location')
+                if not loc: continue
+
+                if any(loc.startswith(str(n)) for n in [34, 33, 22, 23, 24, 25, 26, 27]):
+                    if loc not in south_area_items:
+                        south_area_items[loc] = []
+                    south_area_items[loc].append(item)
+
+                if loc not in location_items:
+                    location_items[loc] = []
+                location_items[loc].append(item)
+
+            for loc, items in location_items.items():
+                prod_nos = {item.get('production_no') for item in items if item.get('production_no')}
+                location_product_numbers[loc] = sorted(list(prod_nos))
+
+    except Exception as e:
+        logging.error(f"Error fetching data for south area map: {e}")
+        flash("マップデータの取得中にエラーが発生しました。", "error")
+
+    return render_template('map_south_area.html', 
+                           location_items=location_items, 
+                           location_product_numbers=location_product_numbers,
+                           south_area_items=south_area_items)
+
+
+@app.route('/map')
+@login_required
 def inventory_map():
     """Displays the inventory map."""
     location_items = {}
