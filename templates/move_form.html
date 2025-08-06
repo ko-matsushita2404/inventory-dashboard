@@ -7,8 +7,9 @@
     <p>部品の新しい保管場所と移動数量を入力してください。</p>
 
     <div class="card mb-4">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h3>移動対象部品</h3>
+            <a href="{{ url_for('item_detail', item_id=item.id) }}" class="btn btn-outline-primary btn-sm">詳細を見る</a>
         </div>
         <div class="card-body">
             <dl class="row">
@@ -21,8 +22,7 @@
                 <dt class="col-sm-4">現在の保管場所</dt>
                 <dd class="col-sm-8"><strong>{{ item.storage_location or '未設定' }}</strong></dd>
 
-                <dt class="col-sm-4">納入残数</dt>
-                <dd class="col-sm-8"><strong>{{ item.remaining_quantity }}</strong></dd>
+                
             </dl>
         </div>
     </div>
@@ -32,11 +32,7 @@
             <label for="new_storage_location" class="form-label">新しい保管場所</label>
             <input type="text" id="new_storage_location" name="new_storage_location" class="form-control form-control-lg" value="{{ item.storage_location or '' }}" required>
         </div>
-        <div class="mb-3">
-            <label for="moved_quantity" class="form-label">移動数量</label>
-            <input type="number" id="moved_quantity" name="moved_quantity" class="form-control" value="0" min="0" max="{{ item.remaining_quantity }}">
-            <div class="form-text">数量の一部を移動する場合に入力します。</div>
-        </div>
+        
         <div class="d-grid gap-2 mt-4">
             <button type="submit" class="btn btn-primary btn-lg">保管場所を更新</button>
             <a href="{{ url_for('search_for_move') }}" class="btn btn-secondary">キャンセル</a>

@@ -28,6 +28,10 @@
     gap: 1rem;
 }
 
+.south-area-wrapper {
+    flex-direction: row-reverse; /* 南エリアを左右反転 */
+}
+
 .shelf-block {
     display: grid;
     grid-template-columns: repeat(2, 100px);
@@ -72,4 +76,29 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* スマートフォン向け90度回転スタイル */
+@media (max-width: 767.98px) {
+    .grid-cell {
+        width: 80px; /* 回転後の幅を調整 */
+        height: 100px; /* 回転後の高さを調整 */
+        transform: rotate(-90deg); /* 反時計回りに90度回転 */
+        transform-origin: center center; /* 回転の中心を中央に設定 */
+        flex-direction: row; /* 回転後の要素の並びを調整 */
+        justify-content: center;
+        align-items: center;
+        padding: 5px; /* パディングを調整 */
+    }
+
+    .zone-name,
+    .product-numbers {
+        white-space: nowrap; /* 回転しても1行に収める */
+        margin: 0 2px; /* 回転後のマージンを調整 */
+    }
+
+    .small-area-row-grid,
+    .shelf-block {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* 回転後のセルサイズに合わせて調整 */
+    }
 }

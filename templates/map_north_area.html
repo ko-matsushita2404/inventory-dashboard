@@ -1,0 +1,17 @@
+<div class="map-section">
+    <h3>北エリア</h3>
+    <div class="large-area-wrapper">
+        {% set north_numbers = [2, 3, 4, 5, 6, 7, 8, 9, 10] %}
+        {% set letters = ['E', 'F', 'C', 'D', 'A', 'B'] %}
+        {% for num in north_numbers %}
+        <div class="shelf-block">
+            {% for letter in letters %}
+            <div class="grid-cell" id="{{ num }}{{ letter }}">
+                <span class="zone-name">{{ num }}{{ letter }}</span>
+                <span class="product-numbers"></span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>

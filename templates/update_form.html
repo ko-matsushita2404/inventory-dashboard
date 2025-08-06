@@ -17,7 +17,6 @@
                 <thead>
                     <tr>
                         <th>品名 / 部品No</th>
-                        <th>納入残数</th>
                         <th>今回納入数量</th>
                         <th>保管場所</th>
                     </tr>
@@ -28,9 +27,6 @@
                         <td>
                             <strong>{{ item.parts_name }}</strong>
                             <small class="d-block text-muted">{{ item.parts_no }}</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-secondary fs-6">{{ item.remaining_quantity }}</span>
                         </td>
                         <td>
                             <input type="number" name="delivered_qty_{{ item.id }}" class="form-control" value="0" min="0">

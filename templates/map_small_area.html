@@ -1,0 +1,35 @@
+<div class="map-section">
+    <h3>小エリア</h3>
+    <div class="small-area-container">
+        <!-- Left Side (40A-X) -->
+        <div class="small-area-side">
+            {% set alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWX' %}
+            {% for row in range(3) %}
+            <div class="small-area-row-grid">
+                {% for col in range(8) %}
+                    {% set char = alphabet[row * 8 + col] %}
+                    <div class="grid-cell" id="40{{ char }}">
+                        <span class="zone-name">40{{ char }}</span>
+                        <span class="product-numbers"></span>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        <!-- Right Side (39A-X) -->
+        <div class="small-area-side">
+            {% set alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWX' %}
+            {% for row in range(3) %}
+            <div class="small-area-row-grid">
+                {% for col in range(8) %}
+                    {% set char = alphabet[row * 8 + col] %}
+                    <div class="grid-cell" id="39{{ char }}">
+                        <span class="zone-name">39{{ char }}</span>
+                        <span class="product-numbers"></span>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

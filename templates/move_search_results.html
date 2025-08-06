@@ -11,22 +11,22 @@
             <thead class="table-dark">
                 <tr>
                     <th>製番</th>
-                    <th>品名</th>
-                    <th>保管場所</th>
-                    <th>納入残数</th>
-                    <th></th>
+                        <th>品番</th>
+                        <th>品名</th>
+                        <th>保管場所</th>
+                        <th>操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in search_results %}
                 <tr>
                     <td>{{ item.production_no or '-' }}</td>
-                    <td>{{ item.parts_name or '-' }}</td>
-                    <td>{{ item.storage_location or '未設定' }}</td>
-                    <td>{{ item.remaining_quantity }}</td>
-                    <td>
-                        <a href="{{ url_for('move_item', item_id=item.id) }}" class="btn btn-sm btn-primary">この部品を移動</a>
-                    </td>
+                        <td>{{ item.parts_no or '-' }}</td>
+                        <td>{{ item.parts_name or '-' }}</td>
+                        <td>{{ item.storage_location or '-' }}</td>
+                        <td>
+                            <a href="{{ url_for('move_item', item_id=item.id) }}" class="btn btn-sm btn-primary">移動</a>
+                        </td>
                 </tr>
                 {% endfor %}
             </tbody>

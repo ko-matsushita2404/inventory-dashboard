@@ -31,8 +31,8 @@
                         <th>部品No</th>
                         <th>図番</th>
                         <th>発注伝票No</th>
+                        <th>発注数</th>
                         <th>納期</th>
-                        <th>納入残数</th>
                         <th>保管場所</th>
                         <th></th>
                     </tr>
@@ -45,8 +45,8 @@
                             <td>{{ item.parts_no or '' }}</td>
                             <td>{{ item.drawing_no or '' }}</td>
                             <td>{{ item.order_slip_no or '' }}</td>
+                            <td>{{ item.order_quantity or '' }}</td>
                             <td>{{ item.delivery_date or '' }}</td>
-                            <td>{{ item.remaining_quantity }}</td>
                             <td>{{ item.storage_location or '' }}</td>
                             <td>
                                 <a href="{{ url_for('item_detail', item_id=item.id) }}" class="btn btn-sm btn-outline-primary">詳細</a>

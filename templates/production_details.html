@@ -31,14 +31,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">総在庫数</h5>
-                    <h2 class="mb-0">{{ total_remaining_quantity }}</h2>
-                </div>
-            </div>
-        </div>
+        
         <div class="col-md-3">
             <div class="card bg-warning text-white">
                 <div class="card-body text-center">
@@ -58,17 +51,7 @@
                         data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" 
                         aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" 
                         aria-controls="collapse{{ loop.index }}">
-                    <div class="d-flex w-100 justify-content-between align-items-center me-3">
-                        <div>
-                            <strong>発注伝票No: {{ order_slip_no }}</strong>
-                            <small class="text-muted ms-2">{{ parts_list|length }}件の部品</small>
-                        </div>
-                        <div class="d-flex gap-3 text-muted small">
-                            <span>在庫計: {{ parts_list|sum(attribute='remaining_quantity') }}</span>
-                            {% set locations = parts_list|map(attribute='storage_location')|list %}
-                            <span>場所数: {{ locations|unique|list|length }}</span>
-                        </div>
-                    </div>
+                    
                 </button>
             </h2>
             <div id="collapse{{ loop.index }}" class="accordion-collapse collapse{% if loop.first %} show{% endif %}" 
@@ -81,8 +64,8 @@
                                     <th>品名</th>
                                     <th>部品No</th>
                                     <th>図番</th>
+                                    <th>発注数</th>
                                     <th>納期</th>
-                                    <th>納入残数</th>
                                     <th>保管場所</th>
                                     <th>アクション</th>
                                 </tr>
@@ -97,12 +80,8 @@
                                     </td>
                                     <td><small class="text-muted">{{ part.parts_no or '-' }}</small></td>
                                     <td><small class="text-muted">{{ part.drawing_no or '-' }}</small></td>
+                                    <td><small class="text-muted">{{ part.order_quantity or '-' }}</small></td>
                                     <td><small class="text-muted">{{ part.delivery_date or '-' }}</small></td>
-                                    <td>
-                                        <span class="badge bg-{% if part.remaining_quantity > 0 %}success{% else %}secondary{% endif %} fs-6">
-                                            {{ part.remaining_quantity }}
-                                        </span>
-                                    </td>
                                     <td>
                                         <span class="badge bg-info">{{ part.storage_location or '未設定' }}</span>
                                     </td>
@@ -150,8 +129,7 @@
                         <h6 class="card-title">{{ location or '未設定' }}</h6>
                         {% set location_parts = order_slips.values()|list|flatten|selectattr('storage_location', 'equalto', location)|list %}
                         <p class="card-text small">
-                            部品数: {{ location_parts|length }} / 
-                            在庫計: {{ location_parts|sum(attribute='remaining_quantity') }}
+                            部品数: {{ location_parts|length }}
                         </p>
                     </div>
                 </div>

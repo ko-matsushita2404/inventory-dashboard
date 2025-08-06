@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from functools import wraps
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, url_for, flash, session, g
+from flask import Flask, render_template, request, redirect, url_for, flash, session, g, jsonify
 from supabase import create_client, Client
 from gotrue.errors import AuthApiError
 from postgrest.exceptions import APIError
@@ -158,7 +158,7 @@ def index():
 def inventory():
     """Main page showing parts with a storage location."""
     try:
-        response = supabase.table('parts').select('*').not_.is_('storage_location', 'null').neq('storage_location', '').order('created_at', desc=True).limit(100).execute()
+        response = supabase.table('parts').select('*, order_quantity').not_.is_('storage_location', 'null').neq('storage_location', '').order('created_at', desc=True).limit(100).execute()
         items = response.data or []
     except Exception as e:
         logging.error(f"Error fetching parts for inventory page: {e}")
@@ -172,7 +172,7 @@ def inventory():
 def all_items():
     """Page showing all parts."""
     try:
-        response = supabase.table('parts').select('*').order('created_at', desc=True).limit(100).execute()
+        response = supabase.table('parts').select('*, order_quantity').order('created_at', desc=True).limit(100).execute()
         items = response.data or []
     except Exception as e:
         logging.error(f"Error fetching all parts: {e}")
@@ -195,7 +195,7 @@ def add_item():
                 'drawing_no': request.form.get('drawing_no', '').strip(),
                 'dimensions': request.form.get('dimensions', '').strip(),
                 'order_slip_no': request.form.get('order_slip_no', '').strip(),
-                'remaining_quantity': safe_int_convert(request.form.get('remaining_quantity'), 0),
+                
                 'delivery_date': delivery_date_str if delivery_date_str else None,
                 'storage_location': request.form.get('storage_location', '').strip(),
                 'updated_at': datetime.now().isoformat()
@@ -265,7 +265,7 @@ def item_detail(item_id):
     """Displays details for a single part."""
     logging.info(f"Accessing /item/{item_id}")
     try:
-        item_response = supabase.table('parts').select('*').eq('id', item_id).single().execute()
+        item_response = supabase.table('parts').select('*, order_quantity').eq('id', item_id).single().execute()
         item = item_response.data
         if not item:
             flash("指定された部品が見つかりません。", "error")
@@ -275,7 +275,7 @@ def item_detail(item_id):
         order_slip_no = item.get('order_slip_no')
         if order_slip_no:
             logging.info(f"Fetching related items for order slip: {order_slip_no}")
-            related_response = supabase.table('parts').select('id, production_no, parts_name, remaining_quantity').eq('order_slip_no', order_slip_no).neq('id', item_id).execute()
+            related_response = supabase.table('parts').select('id, production_no, parts_name').eq('order_slip_no', order_slip_no).neq('id', item_id).execute()
             related_items = related_response.data or []
             logging.info(f"Found {len(related_items)} related items.")
 
@@ -293,12 +293,32 @@ def inventory_map():
     """Displays the inventory map."""
     location_items = {}
     location_product_numbers = {}
+    small_area_items = {}
+    north_area_items = {}
+    south_area_items = {}
+
     try:
-        response = supabase.table('parts').select('id, production_no, storage_location, parts_name, parts_no, remaining_quantity').not_.is_('storage_location', 'null').neq('storage_location', '').execute()
+        response = supabase.table('parts').select('id, production_no, storage_location, parts_name, parts_no').not_.is_('storage_location', 'null').neq('storage_location', '').execute()
         if response.data:
             for item in response.data:
                 loc = item.get('storage_location')
                 if not loc: continue
+
+                # Classify based on location prefix
+                if loc.startswith('39') or loc.startswith('40'):
+                    if loc not in small_area_items:
+                        small_area_items[loc] = []
+                    small_area_items[loc].append(item)
+                elif any(loc.startswith(str(n)) for n in range(2, 11)):
+                    if loc not in north_area_items:
+                        north_area_items[loc] = []
+                    north_area_items[loc].append(item)
+                elif any(loc.startswith(str(n)) for n in [34, 33, 22, 23, 24, 25, 26, 27]):
+                    if loc not in south_area_items:
+                        south_area_items[loc] = []
+                    south_area_items[loc].append(item)
+
+                # Keep the original logic for the modal
                 if loc not in location_items:
                     location_items[loc] = []
                 location_items[loc].append(item)
@@ -306,11 +326,17 @@ def inventory_map():
             for loc, items in location_items.items():
                 prod_nos = {item.get('production_no') for item in items if item.get('production_no')}
                 location_product_numbers[loc] = sorted(list(prod_nos))
+
     except Exception as e:
         logging.error(f"Error fetching data for inventory map: {e}")
         flash("マップデータの取得中にエラーが発生しました。", "error")
 
-    return render_template('map.html', location_items=location_items, location_product_numbers=location_product_numbers)
+    return render_template('map.html', 
+                           location_items=location_items, 
+                           location_product_numbers=location_product_numbers,
+                           small_area_items=small_area_items,
+                           north_area_items=north_area_items,
+                           south_area_items=south_area_items)
 
 
 @app.route('/update', methods=['GET', 'POST'])
@@ -436,55 +462,40 @@ def update_slip(order_slip_no):
         if bulk_storage_location:
             logging.info(f"Bulk storage location provided: '{bulk_storage_location}'")
 
-        for key, delivered_qty_str in form_data.items():
-            if key.startswith('delivered_qty_'):
-                item_id_str = key.replace('delivered_qty_', '')
-                delivered_qty = safe_int_convert(delivered_qty_str.strip(), 0)
-                storage_location = form_data.get(f'storage_location_{item_id_str}', '').strip()
+        for key, value in form_data.items():
+            if key.startswith('storage_location_'):
+                item_id_str = key.replace('storage_location_', '')
+                storage_location = value.strip()
 
                 current_item = current_items_map.get(item_id_str)
                 if not current_item:
                     logging.warning(f"Item with ID {item_id_str} not found in current items map.")
-                    continue # Skip if item not found
+                    continue
 
                 original_storage_location = current_item.get('storage_location', '')
 
-                # Condition to include item for update:
-                # 1. delivered_qty is positive
-                # 2. delivered_qty is 0, but storage_location has changed
-                if delivered_qty > 0 or (delivered_qty == 0 and storage_location != original_storage_location):
-                    logging.info(f"Item {item_id_str} queued for update. Delivered: {delivered_qty}, Location: '{storage_location}'")
+                if storage_location != original_storage_location:
+                    logging.info(f"Item {item_id_str} queued for update. Location: '{storage_location}'")
                     items_to_update.append({
                         'id': str(item_id_str),
-                        'delivered_qty': delivered_qty,
                         'storage_location': storage_location,
-                        'current_item': current_item # Pass current_item for logging and quantity check
+                        'current_item': current_item
                     })
 
         if not items_to_update:
-            flash("更新する数量または保管場所が入力されていません。", "info")
+            flash("更新する保管場所が入力されていません。", "info")
             return redirect(url_for('update_slip', order_slip_no=order_slip_no))
 
         updated_count = 0
         for item_data in items_to_update:
             try:
-                current_item = item_data['current_item'] # Use the pre-fetched current_item
-                delivered_qty = item_data['delivered_qty']
+                current_item = item_data['current_item']
                 storage_location = item_data['storage_location']
 
-                # Apply bulk storage location if provided
                 if bulk_storage_location:
                     storage_location = bulk_storage_location
 
-                previous_quantity = safe_int_convert(current_item.get('remaining_quantity'), 0)
-                new_quantity = previous_quantity - delivered_qty
-
-                if new_quantity < 0:
-                    errors.append(f"部品 '{current_item.get('parts_name')}' の在庫が不足しています。")
-                    continue
-
                 update_payload = {
-                    'remaining_quantity': new_quantity,
                     'storage_location': storage_location,
                     'updated_at': datetime.now().isoformat()
                 }
@@ -497,7 +508,7 @@ def update_slip(order_slip_no):
                         production_no=current_item.get('production_no'),
                         parts_name=current_item.get('parts_name'),
                         action="更新",
-                        details=f"数量を{previous_quantity}から{new_quantity}に変更、保管場所を「{storage_location}」に更新しました。"
+                        details=f"保管場所を「{storage_location}」に更新しました。"
                     )
                     updated_count += 1
                 else:
@@ -518,7 +529,7 @@ def update_slip(order_slip_no):
     # GET request
     try:
         logging.info(f"GET request for update_slip: {order_slip_no}")
-        response = supabase.table('parts').select('*').eq('order_slip_no', order_slip_no).execute()
+        response = supabase.table('parts').select('*').eq('order_slip_no', order_slip_no).or_('storage_location.is.null,storage_location.eq.').execute()
         items = response.data
         if not items:
             flash(f"発注伝票No '{order_slip_no}' の部品が見つかりません。", "error")
@@ -592,7 +603,7 @@ def production_details(production_no):
     logging.info(f"Accessing /production/{production_no}")
     try:
         # 指定された製番の全部品を取得
-        response = supabase.table('parts').select('*').eq('production_no', production_no).order('order_slip_no',
+        response = supabase.table('parts').select('*, order_quantity').eq('production_no', production_no).order('order_slip_no',
                                                                                                 desc=False).execute()
         parts = response.data or []
         logging.info(f"Found {len(parts)} parts for production_no '{production_no}'")
@@ -604,7 +615,6 @@ def production_details(production_no):
         # 発注伝票No別にグループ化
         order_slips = {}
         total_parts_count = 0
-        total_remaining_quantity = 0
         unique_locations = set()
 
         for part in parts:
@@ -614,19 +624,17 @@ def production_details(production_no):
 
             order_slips[order_slip_no].append(part)
             total_parts_count += 1
-            total_remaining_quantity += part.get('remaining_quantity', 0)
 
             if part.get('storage_location'):
                 unique_locations.add(part.get('storage_location'))
         
-        logging.info(f"Grouped into {len(order_slips)} order slips. Total parts: {total_parts_count}, Total remaining: {total_remaining_quantity}")
+        logging.info(f"Grouped into {len(order_slips)} order slips. Total parts: {total_parts_count}")
 
         # テンプレートに渡すデータ
         return render_template('production_details.html',
                                production_no=production_no,
                                order_slips=order_slips,
                                total_parts_count=total_parts_count,
-                               total_remaining_quantity=total_remaining_quantity,
                                unique_locations=sorted(list(unique_locations)))
 
     except Exception as e:
@@ -685,8 +693,7 @@ def move_item(item_id):
 
     if request.method == 'POST':
         new_storage_location = request.form.get('new_storage_location', '').strip()
-        moved_quantity = safe_int_convert(request.form.get('moved_quantity'), 0)
-        logging.info(f"POST to move_item {item_id}. New Location: '{new_storage_location}', Quantity: {moved_quantity}")
+        logging.info(f"POST to move_item {item_id}. New Location: '{new_storage_location}'")
         
         if not new_storage_location:
             flash("新しい保管場所を入力してください。", "warning")
@@ -703,7 +710,7 @@ def move_item(item_id):
                     production_no=current_item.get('production_no'),
                     parts_name=current_item.get('parts_name'),
                     action="移動",
-                    details=f"保管場所を「{current_item.get('storage_location')}」から「{new_storage_location}」に移動しました。数量: {moved_quantity}"
+                    details=f"保管場所を「{current_item.get('storage_location')}」から「{new_storage_location}」に移動しました。"
                 )
                 flash("部品の保管場所を正常に更新しました。", "success")
             else:
@@ -767,6 +774,51 @@ def move_production_from_location(location_name, production_no):
             flash("一括移動中にエラーが発生しました。", "danger")
 
     return render_template('move_production.html', location_name=location_name, production_no=production_no)
+
+
+@app.route('/move_production_dnd', methods=['POST'])
+@login_required
+def move_production_dnd():
+    """Handles drag and drop move of all parts of a production number from one location to another."""
+    data = request.get_json()
+    production_no = data.get('production_no')
+    original_location = data.get('original_location')
+    new_location = data.get('new_location')
+
+    if not production_no or not original_location or not new_location:
+        return jsonify({'success': False, 'message': '必要な情報が不足しています。'}), 400
+
+    try:
+        # Find all parts matching the criteria
+        response = supabase.table('parts').select('id, parts_name').eq('production_no', production_no).eq('storage_location', original_location).execute()
+        items_to_move = response.data or []
+
+        if not items_to_move:
+            return jsonify({'success': False, 'message': '移動対象の部品が見つかりませんでした。'}), 404
+
+        # Update all found items
+        update_payload = {'storage_location': new_location, 'updated_at': datetime.now().isoformat()}
+        
+        item_ids = [item['id'] for item in items_to_move]
+        update_response = supabase.table('parts').update(update_payload).in_('id', item_ids).execute()
+
+        if update_response.data:
+            # Log each move for history
+            for item in items_to_move:
+                log_work_history(
+                    item_id=item['id'],
+                    production_no=production_no,
+                    parts_name=item['parts_name'],
+                    action="D&D一括移動",
+                    details=f"製番 '{production_no}' のD&D一括移動により、保管場所が '{original_location}' から '{new_location}' に変更されました。"
+                )
+            return jsonify({'success': True, 'message': f"製番 '{production_no}' の部品 {len(items_to_move)} 点を '{new_location}' へ移動しました。"})
+        else:
+            return jsonify({'success': False, 'message': 'データベースの更新に失敗しました。'}), 500
+
+    except Exception as e:
+        logging.error(f"Error during D&D bulk move: {e}", exc_info=True)
+        return jsonify({'success': False, 'message': f"一括移動中にエラーが発生しました: {e}"}), 500
 
 
 # --- Authentication Routes ---

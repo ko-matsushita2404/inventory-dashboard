@@ -43,12 +43,10 @@
                 <dt class="col-sm-3">納期</dt>
                 <dd class="col-sm-9">{{ item.delivery_date or '-' }}</dd>
 
-                <dt class="col-sm-3">納入残数</dt>
-                <dd class="col-sm-9">
-                    <span class="badge bg-{% if item.remaining_quantity > 0 %}success{% else %}secondary{% endif %} fs-5">
-                        {{ item.remaining_quantity }}
-                    </span>
-                </dd>
+                
+
+                <dt class="col-sm-3">発注数</dt>
+                <dd class="col-sm-9">{{ item.order_quantity }}</dd>
 
                 <dt class="col-sm-3">保管場所</dt>
                 <dd class="col-sm-9">
@@ -82,17 +80,8 @@
                             <tbody>
                                 {% for r_item in related_items %}
                                     <tr>
-                                        <td>
-                                            <a href="{{ url_for('item_detail', item_id=r_item.id) }}" class="fw-bold text-decoration-none">
-                                                {{ r_item.parts_name }}
-                                            </a>
-                                        </td>
-                                        <td>{{ r_item.production_no }}</td>
-                                        <td>
-                                            <span class="badge bg-{% if r_item.remaining_quantity > 0 %}success{% else %}secondary{% endif %}">
-                                                {{ r_item.remaining_quantity }}
-                                            </span>
-                                        </td>
+                                        <td><a href="{{ url_for('item_detail', item_id=r_item.id) }}">{{ r_item.parts_name }}</a></td>
+                                <td>{{ r_item.production_no }}</td>
                                         <td>
                                             <span class="badge bg-info small">{{ r_item.storage_location or '未設定' }}</span>
                                         </td>
@@ -145,8 +134,7 @@
                         <dd class="col-sm-8">{{ item.production_no or '-' }}</dd>
                         <dt class="col-sm-4">部品No:</dt>
                         <dd class="col-sm-8">{{ item.parts_no or '-' }}</dd>
-                        <dt class="col-sm-4">納入残数:</dt>
-                        <dd class="col-sm-8">{{ item.remaining_quantity }}</dd>
+                        
                     </dl>
                 </div>
                 <div class="modal-footer">

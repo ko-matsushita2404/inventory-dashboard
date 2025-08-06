@@ -1,10 +1,8 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Get the modal element and its body
     const locationModal = new bootstrap.Modal(document.getElementById('locationModal'));
     const modalTitle = document.getElementById('locationModalLabel');
     const modalBody = document.getElementById('locationModalBody');
 
-    // Get data from the script tags
     const itemsDataElement = document.getElementById('location-items-data');
     const productNumbersDataElement = document.getElementById('location-product-numbers-data');
 
@@ -16,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const locationItems = JSON.parse(itemsDataElement.textContent);
     const locationProductNumbers = JSON.parse(productNumbersDataElement.textContent);
 
-    // Populate product numbers in cells
+    // Populate product numbers in cells and add click/drop event listeners
     for (const locationId in locationProductNumbers) {
         const productNumbers = locationProductNumbers[locationId];
         const cell = document.getElementById(locationId);
@@ -26,17 +24,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 productNumbersSpan.textContent = productNumbers.join(', ');
             }
 
-            // Add click event listener to each cell
+            // Click event for modal
             cell.addEventListener('click', function () {
                 const itemsInLocation = locationItems[locationId];
                 if (itemsInLocation && itemsInLocation.length > 0) {
-                    // Set the modal title
                     modalTitle.textContent = `保管場所: ${locationId}`;
-
-                    // Clear previous content and build the new list
                     modalBody.innerHTML = '';
 
-                    // Group items by production_no
                     const groupedByProduction = {};
                     itemsInLocation.forEach(item => {
                         const prodNo = item.production_no;
@@ -44,97 +38,113 @@ document.addEventListener('DOMContentLoaded', function () {
                             groupedByProduction[prodNo] = {
                                 production_no: prodNo,
                                 items: [],
-                                total_quantity: 0
                             };
                         }
                         groupedByProduction[prodNo].items.push(item);
-                        groupedByProduction[prodNo].total_quantity += item.remaining_quantity || 0;
                     });
 
-                    // Create the grouped display
                     const container = document.createElement('div');
                     container.className = 'production-groups';
 
                     for (const prodNo in groupedByProduction) {
                         const group = groupedByProduction[prodNo];
 
-                        // Create production number group header
-                        const groupCard = document.createElement('div');
-                        groupCard.className = 'card mb-3';
+                        const groupDiv = document.createElement('div');
+                        groupDiv.className = 'd-flex justify-content-between align-items-center mb-2';
+                        groupDiv.setAttribute('draggable', 'true'); // Make draggable
+                        groupDiv.dataset.productionNo = prodNo; // Store production number
+                        groupDiv.dataset.originalLocation = locationId; // Store original location
 
-                        const cardHeader = document.createElement('div');
-                        cardHeader.className = 'card-header d-flex justify-content-between align-items-center';
-
-                        const headerContent = document.createElement('div');
-                        headerContent.innerHTML = `
-                            <strong>製番: ${prodNo}</strong>
-                            <small class="text-muted ms-2">${group.items.length}件の部品</small>
-                        `;
-
-                        const buttonGroup = document.createElement('div');
-                        buttonGroup.className = 'btn-group';
+                        const prodNoSpan = document.createElement('span');
+                        prodNoSpan.className = 'fw-bold fs-5';
+                        prodNoSpan.textContent = `製番: ${prodNo}`;
 
                         const moveButton = document.createElement('a');
                         moveButton.href = `/move/location/${locationId}/production/${prodNo}`;
                         moveButton.className = 'btn btn-warning btn-sm';
                         moveButton.innerHTML = '<i class="bi bi-arrows-move"></i> この製番をまとめて移動';
 
-                        const quantityBadge = document.createElement('span');
-                        quantityBadge.className = 'badge bg-primary';
-                        quantityBadge.textContent = `総数量: ${group.total_quantity}`;
-
-                        buttonGroup.appendChild(moveButton);
-
-                        cardHeader.appendChild(headerContent);
-                        cardHeader.appendChild(buttonGroup);
-                        cardHeader.appendChild(quantityBadge);
-
-                        // Create expandable item list
-                        const cardBody = document.createElement('div');
-                        cardBody.className = 'card-body';
-
-                        const itemList = document.createElement('div');
-                        itemList.className = 'list-group list-group-flush';
-
-                        group.items.forEach(item => {
-                            const listItem = document.createElement('a');
-                            listItem.href = `/item/${item.id}`;
-                            listItem.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
-
-                            const itemInfo = document.createElement('div');
-                            itemInfo.innerHTML = `
-                                <div class="fw-bold">${item.parts_name || '名称未設定'}</div>
-                                <small class="text-muted">部品No: ${item.parts_no || '-'}</small>
-                            `;
-
-                            const quantitySpan = document.createElement('span');
-                            quantitySpan.className = 'badge bg-success';
-                            quantitySpan.textContent = `${item.remaining_quantity || 0}`;
-
-                            listItem.appendChild(itemInfo);
-                            listItem.appendChild(quantitySpan);
-                            itemList.appendChild(listItem);
-                        });
-
-                        // Add "View All" link for production number
-                        const viewAllLink = document.createElement('a');
-                        viewAllLink.href = `/production/${prodNo}`;
-                        viewAllLink.className = 'btn btn-outline-primary btn-sm mt-2';
-                        viewAllLink.innerHTML = `<i class="bi bi-list-ul"></i> 製番 ${prodNo} の全詳細を表示`;
-
-                        cardBody.appendChild(itemList);
-                        cardBody.appendChild(viewAllLink);
-
-                        groupCard.appendChild(cardHeader);
-                        groupCard.appendChild(cardBody);
-                        container.appendChild(groupCard);
+                        groupDiv.appendChild(prodNoSpan);
+                        groupDiv.appendChild(moveButton);
+                        container.appendChild(groupDiv);
                     }
 
                     modalBody.appendChild(container);
 
-                    // Show the modal
+                    // Add dragstart listener to draggable elements within the modal
+                    const draggableProdNos = modalBody.querySelectorAll('[draggable="true"]');
+                    draggableProdNos.forEach(draggable => {
+                        draggable.addEventListener('dragstart', function (e) {
+                            const prodNo = e.target.dataset.productionNo;
+                            const originalLocation = e.target.dataset.originalLocation;
+                            e.dataTransfer.setData('text/plain', JSON.stringify({ productionNo: prodNo, originalLocation: originalLocation }));
+                            e.dataTransfer.effectAllowed = 'move';
+                            console.log(`Dragging: ${prodNo} from ${originalLocation}`);
+                        });
+                    });
+
                     locationModal.show();
                 }
+            });
+
+            // Drag and Drop event listeners for cells
+            cell.addEventListener('dragover', function (e) {
+                e.preventDefault(); // Allow drop
+                e.dataTransfer.dropEffect = 'move';
+                this.classList.add('drag-over'); // Visual feedback
+            });
+
+            cell.addEventListener('dragenter', function (e) {
+                e.preventDefault();
+                this.classList.add('drag-over');
+            });
+
+            cell.addEventListener('dragleave', function () {
+                this.classList.remove('drag-over');
+            });
+
+            cell.addEventListener('drop', function (e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+
+                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                const productionNo = data.productionNo;
+                const originalLocation = data.originalLocation;
+                const newLocation = this.id; // The ID of the cell is the new location
+
+                console.log(`Dropped ${productionNo} from ${originalLocation} to ${newLocation}`);
+
+                if (originalLocation === newLocation) {
+                    alert('同じ保管場所への移動です。');
+                    return;
+                }
+
+                // Send move request to server
+                fetch('/move_production_dnd', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        production_no: productionNo,
+                        original_location: originalLocation,
+                        new_location: newLocation
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        // Reload page or update UI to reflect changes
+                        window.location.reload(); 
+                    } else {
+                        alert(`移動に失敗しました: ${data.message}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('移動中にエラーが発生しました。');
+                });
             });
         }
     }
