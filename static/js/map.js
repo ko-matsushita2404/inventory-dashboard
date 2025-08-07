@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     modalBody.appendChild(container);
 
-                    const draggableProdNos = modalBody.querySelectorAll('[draggable="true"]');
+                    const draggableProdNos = modalBody.querySelectorAll('.production-draggable');
                     draggableProdNos.forEach(draggable => {
                         draggable.addEventListener('dragstart', function (e) {
                             const prodNo = e.target.dataset.productionNo;
