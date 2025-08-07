@@ -78,27 +78,38 @@
     text-overflow: ellipsis;
 }
 
-/* スマートフォン向け90度回転スタイル */
+/* Production number link style */
+.production-link {
+    color: inherit; /* Inherit color from parent */
+    text-decoration: none; /* Remove underline */
+}
+
+.production-link:hover {
+    text-decoration: underline; /* Underline on hover */
+    color: #0056b3;
+}
+
+/* --- Mobile View Adjustments --- */
 @media (max-width: 767.98px) {
-    .grid-cell {
-        width: 80px; /* 回転後の幅を調整 */
-        height: 100px; /* 回転後の高さを調整 */
-        transform: rotate(-90deg); /* 反時計回りに90度回転 */
-        transform-origin: center center; /* 回転の中心を中央に設定 */
-        flex-direction: row; /* 回転後の要素の並びを調整 */
-        justify-content: center;
-        align-items: center;
-        padding: 5px; /* パディングを調整 */
+    /* Allow map containers to scroll horizontally */
+    .small-area-container,
+    .large-area-wrapper {
+        overflow-x: auto;
+        padding-bottom: 1rem; /* Add some padding for the scrollbar */
     }
 
-    .zone-name,
-    .product-numbers {
-        white-space: nowrap; /* 回転しても1行に収める */
-        margin: 0 2px; /* 回転後のマージンを調整 */
+    /* Prevent the grid from shrinking too much */
+    .small-area-row-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 100px); /* Keep original column setup */
+        gap: 5px;
     }
 
-    .small-area-row-grid,
     .shelf-block {
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* 回転後のセルサイズに合わせて調整 */
+        display: grid;
+        grid-template-columns: repeat(2, 100px); /* Keep original column setup */
+        gap: 5px;
+        border: 1px solid #ddd;
+        padding: 5px;
     }
 }

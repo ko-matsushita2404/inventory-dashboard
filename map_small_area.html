@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}小エリアマップ{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/map_styles.css') }}">
+{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">小エリアマップ</h1>
+
+    <div class="inventory-map-container">
+        <div class="map-section">
+            <h3>小エリア</h3>
+            <div class="small-area-container">
+                <!-- Left Side (40A-X) -->
+                <div class="small-area-side">
+                    {% set alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWX' %}
+                    {% for row in range(3) %}
+                    <div class="small-area-row-grid">
+                        {% for col in range(8) %}
+                            {% set char = alphabet[row * 8 + col] %}
+                            <div class="grid-cell" id="40{{ char }}">
+                                <span class="zone-name">40{{ char }}</span>
+                                <span class="product-numbers"></span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <!-- Right Side (39A-X) -->
+                <div class="small-area-side">
+                    {% set alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWX' %}
+                    {% for row in range(3) %}
+                    <div class="small-area-row-grid">
+                        {% for col in range(8) %}
+                            {% set char = alphabet[row * 8 + col] %}
+                            <div class="grid-cell" id="39{{ char }}">
+                                <span class="zone-name">39{{ char }}</span>
+                                <span class="product-numbers"></span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script id="location-items-data" type="application/json">
+        {{ location_items | tojson | safe }}
+    </script>
+    <script id="location-product-numbers-data" type="application/json">
+        {{ location_product_numbers | tojson | safe }}
+    </script>
+
+    <!-- Modal -->
+    <div class="modal" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="locationModalLabel">保管場所の詳細</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="locationModalBody">
+                    <!-- Item details will be injected here by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

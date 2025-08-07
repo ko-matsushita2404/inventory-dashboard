@@ -71,15 +71,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     modalBody.appendChild(container);
 
-                    // Add dragstart listener to draggable elements within the modal
                     const draggableProdNos = modalBody.querySelectorAll('[draggable="true"]');
                     draggableProdNos.forEach(draggable => {
                         draggable.addEventListener('dragstart', function (e) {
                             const prodNo = e.target.dataset.productionNo;
                             const originalLocation = e.target.dataset.originalLocation;
+                            
+                            // Set data for the drop event
                             e.dataTransfer.setData('text/plain', JSON.stringify({ productionNo: prodNo, originalLocation: originalLocation }));
                             e.dataTransfer.effectAllowed = 'move';
-                            console.log(`Dragging: ${prodNo} from ${originalLocation}`);
+                            e.target.style.cursor = 'grabbing'; // Change cursor on drag
+
+                            // Hide the modal so the user can see the map
+                            locationModal.hide();
+                        });
+
+                        draggable.addEventListener('dragend', function (e) {
+                            e.target.style.cursor = 'grab'; // Reset cursor
                         });
                     });
 
@@ -115,8 +123,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.log(`Dropped ${productionNo} from ${originalLocation} to ${newLocation}`);
 
                 if (originalLocation === newLocation) {
-                    alert('同じ保管場所への移動です。');
+                    // No action needed if dropping in the same place
                     return;
+                }
+
+                // Check if the destination already contains the same production number
+                const destProdNumbers = locationProductNumbers[newLocation] || [];
+                if (destProdNumbers.includes(productionNo)) {
+                    if (!confirm(`移動先 (${newLocation}) には既に同じ製番 (${productionNo}) が存在します。移動を続行しますか？`)) {
+                        return; // User cancelled
+                    }
                 }
 
                 // Send move request to server
