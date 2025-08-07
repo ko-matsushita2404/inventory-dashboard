@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const locationItems = JSON.parse(itemsDataElement.textContent);
     const locationProductNumbers = JSON.parse(productNumbersDataElement.textContent);
 
-    // Populate product numbers in cells and add click/drop event listeners
+    // Populate product numbers in cells and add click listeners
     for (const locationId in locationProductNumbers) {
         const productNumbers = locationProductNumbers[locationId];
         const cell = document.getElementById(locationId);
@@ -35,10 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     itemsInLocation.forEach(item => {
                         const prodNo = item.production_no;
                         if (!groupedByProduction[prodNo]) {
-                            groupedByProduction[prodNo] = {
-                                production_no: prodNo,
-                                items: [],
-                            };
+                            groupedByProduction[prodNo] = { production_no: prodNo, items: [] };
                         }
                         groupedByProduction[prodNo].items.push(item);
                     });
@@ -51,9 +48,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         const groupDiv = document.createElement('div');
                         groupDiv.className = 'd-flex justify-content-between align-items-center mb-2';
-                        groupDiv.setAttribute('draggable', 'true'); // Make draggable
-                        groupDiv.dataset.productionNo = prodNo; // Store production number
-                        groupDiv.dataset.originalLocation = locationId; // Store original location
 
                         const prodNoSpan = document.createElement('span');
                         prodNoSpan.className = 'fw-bold fs-5';
@@ -88,112 +82,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     modalBody.appendChild(container);
-
-                    const draggableProdNos = modalBody.querySelectorAll('.production-draggable');
-                    draggableProdNos.forEach(draggable => {
-                        draggable.addEventListener('dragstart', function (e) {
-                            const prodNo = e.target.dataset.productionNo;
-                            const originalLocation = e.target.dataset.originalLocation;
-
-                            e.dataTransfer.setData('text/plain', JSON.stringify({ productionNo: prodNo, originalLocation: originalLocation }));
-                            e.dataTransfer.effectAllowed = 'move';
-
-                            // Hide modal and its backdrop using a CSS class
-                            const modalElement = document.getElementById('locationModal');
-                            const backdrop = document.querySelector('.modal-backdrop');
-                            modalElement.classList.add('dnd-hide');
-                            if (backdrop) {
-                                backdrop.classList.add('dnd-hide');
-                            }
-                        });
-
-                        draggable.addEventListener('dragend', function (e) {
-                            // Always make the modal and backdrop visible again after drag ends
-                            const modalElement = document.getElementById('locationModal');
-                            const backdrop = document.querySelector('.modal-backdrop');
-                            modalElement.classList.remove('dnd-hide');
-                            if (backdrop) {
-                                backdrop.classList.remove('dnd-hide');
-                            }
-
-                            // If drop was successful, the page reloads anyway.
-                            // If cancelled, we need to re-show the modal that was hidden.
-                            if (e.dataTransfer.dropEffect === 'none') {
-                                locationModal.show();
-                            }
-                        });
-                    });
-
                     locationModal.show();
                 }
-            });
-
-            // Drag and Drop event listeners for cells
-            cell.addEventListener('dragover', function (e) {
-                e.preventDefault(); // Allow drop
-                e.dataTransfer.dropEffect = 'move';
-                this.classList.add('drag-over'); // Visual feedback
-            });
-
-            cell.addEventListener('dragenter', function (e) {
-                e.preventDefault();
-                this.classList.add('drag-over');
-            });
-
-            cell.addEventListener('dragleave', function () {
-                this.classList.remove('drag-over');
-            });
-
-            cell.addEventListener('drop', function (e) {
-                e.preventDefault();
-                this.classList.remove('drag-over');
-
-                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                const productionNo = data.productionNo;
-                const originalLocation = data.originalLocation;
-                const newLocation = this.id; // The ID of the cell is the new location
-
-                console.log(`Dropped ${productionNo} from ${originalLocation} to ${newLocation}`);
-
-                if (originalLocation === newLocation) {
-                    // No action needed if dropping in the same place
-                    return;
-                }
-
-                // Check if the destination already contains the same production number
-                const destProdNumbers = locationProductNumbers[newLocation] || [];
-                if (destProdNumbers.includes(productionNo)) {
-                    if (!confirm(`移動先 (${newLocation}) には既に同じ製番 (${productionNo}) が存在します。移動を続行しますか？`)) {
-                        return; // User cancelled
-                    }
-                }
-
-                // Send move request to server
-                fetch('/move_production_dnd', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        production_no: productionNo,
-                        original_location: originalLocation,
-                        new_location: newLocation
-                    }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        // Reload page or update UI to reflect changes
-                        window.location.reload(); 
-                    } else {
-                        alert(`移動に失敗しました: ${data.message}`);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('移動中にエラーが発生しました。');
-                });
             });
         }
     }

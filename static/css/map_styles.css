@@ -24,12 +24,11 @@
 /* --- Map Layout --- */
 .small-area-container, .large-area-wrapper {
     display: flex;
-    flex-wrap: nowrap; /* Force single line */
-    justify-content: flex-start; /* Align to the left */
-    gap: 8px; /* Space between shelf blocks */
+    flex-wrap: nowrap; /* Force single line, NO WRAPPING */
+    justify-content: center; /* Center the blocks */
+    align-items: flex-start;
+    gap: 4px; /* Minimal space between shelf blocks */
     width: 100%;
-    overflow-x: auto; /* Allow horizontal scroll ONLY if it overflows */
-    padding-bottom: 10px;
 }
 
 .south-area-wrapper {
@@ -37,29 +36,39 @@
 }
 
 .shelf-block-wrapper, .small-area-side {
-    flex-shrink: 0; /* Prevent blocks from shrinking */
+    flex-shrink: 1; /* Allow blocks to shrink to fit */
+    min-width: 0;
 }
 
 .shelf-block-wrapper > h4, .small-area-side > h4 {
     text-align: center;
-    font-size: 0.9em;
-    margin-bottom: 3px;
+    font-size: 0.8em;
+    margin-bottom: 2px;
 }
 
-.shelf-block, .small-area-row-grid {
+/* Small area has 8 columns per row */
+.small-area-row-grid {
     display: grid;
-    grid-template-columns: repeat(2, 70px); /* 2 columns */
-    gap: 3px;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    margin-bottom: 2px;
+}
+
+/* Large area has 2 columns per shelf */
+.shelf-block {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
     border: 1px solid #ddd;
-    padding: 3px;
+    padding: 2px;
 }
 
 /* --- Cell and Font Styles --- */
 .grid-cell {
-    width: 70px;
-    height: 55px;
+    min-width: 40px;
+    height: 45px;
     border: 1px solid #ccc;
-    padding: 3px;
+    padding: 2px;
     text-align: center;
     cursor: pointer;
     transition: background-color 0.3s;
@@ -79,32 +88,19 @@
 
 .zone-name {
     font-weight: bold;
-    font-size: 0.75em;
+    font-size: 0.7em;
     display: block;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
     white-space: nowrap;
 }
 
 .product-numbers {
-    font-size: 0.65em; /* Final font size reduction */
+    font-size: 0.6em;
     color: #555;
     display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-/* --- Drag and Drop --- */
-.production-draggable {
-    cursor: grab;
-}
-.production-draggable:active {
-    cursor: grabbing;
-}
-
-/* Hide modal and backdrop during drag */
-.modal.dnd-hide, .modal-backdrop.dnd-hide {
-    display: none !important;
 }
 
 /* Production number link style */
