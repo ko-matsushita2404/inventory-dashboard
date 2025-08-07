@@ -95,25 +95,21 @@ document.addEventListener('DOMContentLoaded', function () {
                             const prodNo = e.target.dataset.productionNo;
                             const originalLocation = e.target.dataset.originalLocation;
 
-                            // Set the data for the drop event
                             e.dataTransfer.setData('text/plain', JSON.stringify({ productionNo: prodNo, originalLocation: originalLocation }));
                             e.dataTransfer.effectAllowed = 'move';
 
-                            // Listen for when the modal is fully hidden
+                            // Make the modal transparent and pass events through
                             const modalElement = document.getElementById('locationModal');
-                            modalElement.addEventListener('hidden.bs.modal', function onModalHidden() {
-                                // This code runs AFTER the modal is completely gone
-                                document.body.classList.add('dragging');
-                                // Remove the event listener to avoid it firing multiple times
-                                modalElement.removeEventListener('hidden.bs.modal', onModalHidden);
-                            }, { once: true });
-
-                            // Start hiding the modal
-                            locationModal.hide();
+                            modalElement.classList.add('is-dragging');
                         });
 
                         draggable.addEventListener('dragend', function (e) {
-                            document.body.classList.remove('dragging');
+                            // Restore the modal
+                            const modalElement = document.getElementById('locationModal');
+                            modalElement.classList.remove('is-dragging');
+
+                            // If the drop was not successful, the modal should reappear.
+                            // If it was successful, the page will reload anyway.
                         });
                     });
 

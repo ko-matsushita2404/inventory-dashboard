@@ -23,28 +23,41 @@
 
 .large-area-wrapper {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 1rem;
+    flex-wrap: nowrap; /* 全ての棚を一行に強制する */
+    justify-content: center; /* 中央揃え */
+    gap: 5px; /* 棚と棚の間のスペースを詰める */
+    width: 100%;
 }
 
 .south-area-wrapper {
-    flex-direction: row-reverse; /* 南エリアを左右反転 */
+    flex-direction: row-reverse;
+}
+
+.shelf-block-wrapper {
+    margin: 0;
+    padding: 0;
+    flex-shrink: 1; /* コンテンツがはみ出る場合に縮小を許可 */
+}
+
+.shelf-block-wrapper > h4 {
+    text-align: center;
+    font-size: 0.9em;
+    margin-bottom: 3px;
 }
 
 .shelf-block {
     display: grid;
-    grid-template-columns: repeat(2, 100px); /* 2列のグリッド設定 */
-    gap: 5px;
+    grid-template-columns: repeat(2, 60px); /* セルの幅に合わせて2列に */
+    gap: 2px; /* セル間のスペースを詰める */
     border: 1px solid #ddd;
-    padding: 5px;
+    padding: 3px;
 }
 
 .grid-cell {
-    width: 80px; /* 幅を狭くする */
-    height: 70px; /* 高さを少し調整 */
+    width: 60px; /* 幅を狭くする */
+    height: 50px; /* 高さを調整 */
     border: 1px solid #ccc;
-    padding: 5px; /* パディングを調整 */
+    padding: 3px; /* パディングを調整 */
     text-align: center;
     cursor: pointer;
     transition: background-color 0.3s;
@@ -64,19 +77,25 @@
 
 .zone-name {
     font-weight: bold;
-    font-size: 0.9em; /* 少し小さく */
+    font-size: 0.7em; /* 名称のフォントを調整 */
     display: block;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
     white-space: nowrap;
 }
 
 .product-numbers {
-    font-size: 0.7em; /* フォントサイズを小さくする */
+    font-size: 0.6em; /* 製番のフォントをさらに小さくする */
     color: #555;
     display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* --- Drag and Drop Enhancement --- */
+.modal.is-dragging {
+    opacity: 0.2; /* Make the modal semi-transparent */
+    pointer-events: none; /* Allow mouse events to pass through to the map below */
 }
 
 /* Production number link style */
