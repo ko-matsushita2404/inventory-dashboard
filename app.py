@@ -551,6 +551,53 @@ def search_for_update():
     return render_template('update_search.html', initial_search_term=production_no_param or '')
 
 
+@app.route('/move_production', methods=['POST'])
+@login_required
+def move_production():
+    """Handles the bulk movement of all parts for a given production number."""
+    production_no = request.form.get('production_no')
+    new_location = request.form.get('new_storage_location', '').strip()
+
+    if not production_no or not new_location:
+        flash("製番と新しい保管場所の両方が必要です。", "danger")
+        return redirect(url_for('production_details', production_no=production_no))
+
+    try:
+        # First, get the IDs and original info of the parts to be moved
+        select_response = supabase.table('parts').select("id, parts_name, storage_location").eq('production_no', production_no).execute()
+        items_to_move = select_response.data or []
+
+        if not items_to_move:
+            flash(f"製番 '{production_no}' の移動対象部品が見つかりませんでした。", "warning")
+            return redirect(url_for('production_details', production_no=production_no))
+
+        item_ids = [item['id'] for item in items_to_move]
+
+        # Update all items at once
+        update_payload = {'storage_location': new_location, 'updated_at': datetime.now().isoformat()}
+        update_response = supabase.table('parts').update(update_payload).in_('id', item_ids).execute()
+
+        if update_response.data:
+            # Log the history for each moved item
+            for item in items_to_move:
+                log_work_history(
+                    item_id=item['id'],
+                    production_no=production_no,
+                    parts_name=item['parts_name'],
+                    action="製番一括移動",
+                    details=f"'{production_no}' の一括移動により、保管場所が '{item.get('storage_location')}' から '{new_location}' に変更されました。"
+                )
+            flash(f"製番 '{production_no}' の部品 {len(update_response.data)} 点を '{new_location}' へ正常に移動しました。", "success")
+        else:
+            flash("データベースの更新に失敗しました。", "danger")
+
+    except Exception as e:
+        logging.error(f"Error during bulk production move for {production_no}: {e}", exc_info=True)
+        flash("一括移動中にエラーが発生しました。", "danger")
+
+    return redirect(url_for('production_details', production_no=production_no))
+
+
 @app.route('/update/<order_slip_no>', methods=['GET', 'POST'])
 @login_required
 def update_slip(order_slip_no):
@@ -715,6 +762,54 @@ def delete_item(item_id):
     
     logging.info("Redirecting to all_items after deletion process.")
     return redirect(url_for('all_items'))
+
+
+@app.route('/production/<production_no>/location/<location_name>')
+@login_required
+def production_details_by_location(production_no, location_name):
+    """Displays details for a specific production number within a specific location."""
+    logging.info(f"Accessing details for production {production_no} in location {location_name}")
+    try:
+        # Filter parts by both production number and storage location
+        response = supabase.table('parts').select('*, order_quantity') \
+            .eq('production_no', production_no) \
+            .eq('storage_location', location_name) \
+            .order('order_slip_no', desc=False).execute()
+        
+        parts = response.data or []
+        logging.info(f"Found {len(parts)} parts for production {production_no} in {location_name}")
+
+        if not parts:
+            flash(f"製番 '{production_no}' の部品が場所 '{location_name}' に見つかりません。", "info")
+            return redirect(url_for('inventory_map'))
+
+        # Group by order slip number (same logic as the original function)
+        order_slips = {}
+        total_parts_count = 0
+        unique_locations = {location_name} # Only one location in this view
+
+        for part in parts:
+            order_slip_no = part.get('order_slip_no', '未分類')
+            if order_slip_no not in order_slips:
+                order_slips[order_slip_no] = []
+            order_slips[order_slip_no].append(part)
+            total_parts_count += 1
+        
+        logging.info(f"Grouped into {len(order_slips)} order slips.")
+
+        # Render the same template, but with extra context
+        return render_template('production_details.html',
+                               production_no=production_no,
+                               order_slips=order_slips,
+                               total_parts_count=total_parts_count,
+                               unique_locations=sorted(list(unique_locations)),
+                               is_location_view=True, # Flag for the template
+                               location_name=location_name) # Pass location name to template
+
+    except Exception as e:
+        logging.error(f"Error fetching location-specific production details: {e}", exc_info=True)
+        flash("製番詳細の取得中にエラーが発生しました。", "error")
+        return redirect(url_for('inventory_map'))
 
 
 @app.route('/production/<production_no>')

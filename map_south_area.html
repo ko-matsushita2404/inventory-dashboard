@@ -13,19 +13,24 @@
         <div class="map-section">
             <h3>南エリア</h3>
             <div class="large-area-wrapper south-area-wrapper">
-                {% set south_numbers = [34, 33, 22, 23, 24, 25, 26, 27] %}
-                {% set letters = ['E', 'F', 'C', 'D', 'A', 'B'] %}
-                {% for num in south_numbers %}
-                <div class="shelf-block">
-                    {% for letter in letters %}
-                    <div class="grid-cell" id="{{ num }}{{ letter }}">
-                        <span class="zone-name">{{ num }}{{ letter }}</span>
-                        <span class="product-numbers"></span>
-                    </div>
-                    {% endfor %}
+        {% for shelf_num in [34, 33, 22, 23, 24, 25, 26, 27] %}
+        <div class="shelf-block-wrapper">
+            <h4>{{ shelf_num }}番</h4>
+            <div class="shelf-block">
+                {% for i in range(1, 4) %}
+                <div class="grid-cell" id="{{ shelf_num }}-{{ i }}-A">
+                    <span class="zone-name">{{ shelf_num }}-{{ i }}-A</span>
+                    <span class="product-numbers"></span>
+                </div>
+                <div class="grid-cell" id="{{ shelf_num }}-{{ i }}-B">
+                    <span class="zone-name">{{ shelf_num }}-{{ i }}-B</span>
+                    <span class="product-numbers"></span>
                 </div>
                 {% endfor %}
             </div>
+        </div>
+        {% endfor %}
+    </div>
         </div>
     </div>
 
