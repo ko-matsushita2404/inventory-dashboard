@@ -94,20 +94,26 @@ document.addEventListener('DOMContentLoaded', function () {
                         draggable.addEventListener('dragstart', function (e) {
                             const prodNo = e.target.dataset.productionNo;
                             const originalLocation = e.target.dataset.originalLocation;
-                            
-                            // Set data for the drop event
-                            // Hide the modal completely and then initiate drag
+
+                            // Set the data for the drop event
+                            e.dataTransfer.setData('text/plain', JSON.stringify({ productionNo: prodNo, originalLocation: originalLocation }));
+                            e.dataTransfer.effectAllowed = 'move';
+
+                            // Listen for when the modal is fully hidden
+                            const modalElement = document.getElementById('locationModal');
+                            modalElement.addEventListener('hidden.bs.modal', function onModalHidden() {
+                                // This code runs AFTER the modal is completely gone
+                                document.body.classList.add('dragging');
+                                // Remove the event listener to avoid it firing multiple times
+                                modalElement.removeEventListener('hidden.bs.modal', onModalHidden);
+                            }, { once: true });
+
+                            // Start hiding the modal
                             locationModal.hide();
-                            // A short delay to allow the modal backdrop to disappear
-                            setTimeout(() => {
-                                e.dataTransfer.setData('text/plain', JSON.stringify({ productionNo: prodNo, originalLocation: originalLocation }));
-                                e.dataTransfer.effectAllowed = 'move';
-                                document.body.classList.add('dragging'); // Add a class to the body
-                            }, 150); // 150ms delay, just longer than the default fade time
                         });
 
                         draggable.addEventListener('dragend', function (e) {
-                            e.target.style.cursor = 'grab'; // Reset cursor
+                            document.body.classList.remove('dragging');
                         });
                     });
 

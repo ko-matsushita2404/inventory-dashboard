@@ -34,12 +34,10 @@
 
 .shelf-block {
     display: grid;
-    /* 4 columns, each with a width of 80px */
-    grid-template-columns: repeat(4, 80px);
+    grid-template-columns: repeat(2, 100px); /* 2列のグリッド設定 */
     gap: 5px;
     border: 1px solid #ddd;
     padding: 5px;
-    flex-shrink: 0;
 }
 
 .grid-cell {
