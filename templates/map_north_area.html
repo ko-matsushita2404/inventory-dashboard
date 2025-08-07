@@ -13,19 +13,24 @@
         <div class="map-section">
             <h3>北エリア</h3>
             <div class="large-area-wrapper">
-                {% set north_numbers = [2, 3, 4, 5, 6, 7, 8, 9, 10] %}
-                {% set letters = ['E', 'F', 'C', 'D', 'A', 'B'] %}
-                {% for num in north_numbers %}
-                <div class="shelf-block">
-                    {% for letter in letters %}
-                    <div class="grid-cell" id="{{ num }}{{ letter }}">
-                        <span class="zone-name">{{ num }}{{ letter }}</span>
-                        <span class="product-numbers"></span>
-                    </div>
-                    {% endfor %}
+        {% for shelf_num in range(2, 11) %}
+        <div class="shelf-block-wrapper">
+            <h4>{{ shelf_num }}番</h4>
+            <div class="shelf-block">
+                {% for i in range(1, 4) %}
+                <div class="grid-cell" id="{{ shelf_num }}-{{ i }}-A">
+                    <span class="zone-name">{{ shelf_num }}-{{ i }}-A</span>
+                    <span class="product-numbers"></span>
+                </div>
+                <div class="grid-cell" id="{{ shelf_num }}-{{ i }}-B">
+                    <span class="zone-name">{{ shelf_num }}-{{ i }}-B</span>
+                    <span class="product-numbers"></span>
                 </div>
                 {% endfor %}
             </div>
+        </div>
+        {% endfor %}
+    </div>
         </div>
     </div>
 
@@ -37,7 +42,7 @@
     </script>
 
     <!-- Modal -->
-    <div class="modal fade" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
+    <div class="modal" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">

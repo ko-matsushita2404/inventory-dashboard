@@ -59,13 +59,31 @@ document.addEventListener('DOMContentLoaded', function () {
                         prodNoSpan.className = 'fw-bold fs-5';
                         prodNoSpan.textContent = `製番: ${prodNo}`;
 
+                        // --- Button Group ---
+                        const buttonGroup = document.createElement('div');
+                        buttonGroup.className = 'btn-group';
+                        buttonGroup.setAttribute('role', 'group');
+
+                        // Details Button (Location Specific)
+                        const detailsButton = document.createElement('a');
+                        detailsButton.href = `/production/${prodNo}/location/${locationId}`;
+                        detailsButton.target = '_blank';
+                        detailsButton.className = 'btn btn-info btn-sm';
+                        detailsButton.innerHTML = '<i class="bi bi-info-circle"></i> 詳細';
+                        detailsButton.title = 'この場所の部品詳細を開く';
+
+                        // Move Button
                         const moveButton = document.createElement('a');
                         moveButton.href = `/move/location/${locationId}/production/${prodNo}`;
                         moveButton.className = 'btn btn-warning btn-sm';
-                        moveButton.innerHTML = '<i class="bi bi-arrows-move"></i> この製番をまとめて移動';
+                        moveButton.innerHTML = '<i class="bi bi-arrows-move"></i> 移動';
+                        moveButton.title = 'この製番をまとめて移動';
+
+                        buttonGroup.appendChild(detailsButton);
+                        buttonGroup.appendChild(moveButton);
 
                         groupDiv.appendChild(prodNoSpan);
-                        groupDiv.appendChild(moveButton);
+                        groupDiv.appendChild(buttonGroup);
                         container.appendChild(groupDiv);
                     }
 
@@ -78,12 +96,14 @@ document.addEventListener('DOMContentLoaded', function () {
                             const originalLocation = e.target.dataset.originalLocation;
                             
                             // Set data for the drop event
-                            e.dataTransfer.setData('text/plain', JSON.stringify({ productionNo: prodNo, originalLocation: originalLocation }));
-                            e.dataTransfer.effectAllowed = 'move';
-                            e.target.style.cursor = 'grabbing'; // Change cursor on drag
-
-                            // Hide the modal so the user can see the map
+                            // Hide the modal completely and then initiate drag
                             locationModal.hide();
+                            // A short delay to allow the modal backdrop to disappear
+                            setTimeout(() => {
+                                e.dataTransfer.setData('text/plain', JSON.stringify({ productionNo: prodNo, originalLocation: originalLocation }));
+                                e.dataTransfer.effectAllowed = 'move';
+                                document.body.classList.add('dragging'); // Add a class to the body
+                            }, 150); // 150ms delay, just longer than the default fade time
                         });
 
                         draggable.addEventListener('dragend', function (e) {
