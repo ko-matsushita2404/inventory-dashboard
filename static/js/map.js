@@ -98,18 +98,29 @@ document.addEventListener('DOMContentLoaded', function () {
                             e.dataTransfer.setData('text/plain', JSON.stringify({ productionNo: prodNo, originalLocation: originalLocation }));
                             e.dataTransfer.effectAllowed = 'move';
 
-                            // Make the modal transparent and pass events through
+                            // Hide modal and its backdrop using a CSS class
                             const modalElement = document.getElementById('locationModal');
-                            modalElement.classList.add('is-dragging');
+                            const backdrop = document.querySelector('.modal-backdrop');
+                            modalElement.classList.add('dnd-hide');
+                            if (backdrop) {
+                                backdrop.classList.add('dnd-hide');
+                            }
                         });
 
                         draggable.addEventListener('dragend', function (e) {
-                            // Restore the modal
+                            // Always make the modal and backdrop visible again after drag ends
                             const modalElement = document.getElementById('locationModal');
-                            modalElement.classList.remove('is-dragging');
+                            const backdrop = document.querySelector('.modal-backdrop');
+                            modalElement.classList.remove('dnd-hide');
+                            if (backdrop) {
+                                backdrop.classList.remove('dnd-hide');
+                            }
 
-                            // If the drop was not successful, the modal should reappear.
-                            // If it was successful, the page will reload anyway.
+                            // If drop was successful, the page reloads anyway.
+                            // If cancelled, we need to re-show the modal that was hidden.
+                            if (e.dataTransfer.dropEffect === 'none') {
+                                locationModal.show();
+                            }
                         });
                     });
 

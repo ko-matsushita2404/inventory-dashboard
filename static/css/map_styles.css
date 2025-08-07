@@ -21,43 +21,45 @@
     gap: 5px;
 }
 
-.large-area-wrapper {
+/* --- Map Layout --- */
+.small-area-container, .large-area-wrapper {
     display: flex;
-    flex-wrap: nowrap; /* 全ての棚を一行に強制する */
-    justify-content: center; /* 中央揃え */
-    gap: 5px; /* 棚と棚の間のスペースを詰める */
+    flex-wrap: nowrap; /* Force single line */
+    justify-content: flex-start; /* Align to the left */
+    gap: 8px; /* Space between shelf blocks */
     width: 100%;
+    overflow-x: auto; /* Allow horizontal scroll ONLY if it overflows */
+    padding-bottom: 10px;
 }
 
 .south-area-wrapper {
     flex-direction: row-reverse;
 }
 
-.shelf-block-wrapper {
-    margin: 0;
-    padding: 0;
-    flex-shrink: 1; /* コンテンツがはみ出る場合に縮小を許可 */
+.shelf-block-wrapper, .small-area-side {
+    flex-shrink: 0; /* Prevent blocks from shrinking */
 }
 
-.shelf-block-wrapper > h4 {
+.shelf-block-wrapper > h4, .small-area-side > h4 {
     text-align: center;
     font-size: 0.9em;
     margin-bottom: 3px;
 }
 
-.shelf-block {
+.shelf-block, .small-area-row-grid {
     display: grid;
-    grid-template-columns: repeat(2, 60px); /* セルの幅に合わせて2列に */
-    gap: 2px; /* セル間のスペースを詰める */
+    grid-template-columns: repeat(2, 70px); /* 2 columns */
+    gap: 3px;
     border: 1px solid #ddd;
     padding: 3px;
 }
 
+/* --- Cell and Font Styles --- */
 .grid-cell {
-    width: 60px; /* 幅を狭くする */
-    height: 50px; /* 高さを調整 */
+    width: 70px;
+    height: 55px;
     border: 1px solid #ccc;
-    padding: 3px; /* パディングを調整 */
+    padding: 3px;
     text-align: center;
     cursor: pointer;
     transition: background-color 0.3s;
@@ -77,14 +79,14 @@
 
 .zone-name {
     font-weight: bold;
-    font-size: 0.7em; /* 名称のフォントを調整 */
+    font-size: 0.75em;
     display: block;
     margin-bottom: 2px;
     white-space: nowrap;
 }
 
 .product-numbers {
-    font-size: 0.6em; /* 製番のフォントをさらに小さくする */
+    font-size: 0.65em; /* Final font size reduction */
     color: #555;
     display: block;
     white-space: nowrap;
@@ -92,10 +94,17 @@
     text-overflow: ellipsis;
 }
 
-/* --- Drag and Drop Enhancement --- */
-.modal.is-dragging {
-    opacity: 0.2; /* Make the modal semi-transparent */
-    pointer-events: none; /* Allow mouse events to pass through to the map below */
+/* --- Drag and Drop --- */
+.production-draggable {
+    cursor: grab;
+}
+.production-draggable:active {
+    cursor: grabbing;
+}
+
+/* Hide modal and backdrop during drag */
+.modal.dnd-hide, .modal-backdrop.dnd-hide {
+    display: none !important;
 }
 
 /* Production number link style */
